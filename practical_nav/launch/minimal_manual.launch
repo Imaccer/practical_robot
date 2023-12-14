@@ -21,7 +21,7 @@
 
 
 <!--Uncomment to launch the image viewer automatically -->
-<node pkg="rqt_image_view" type="rqt_image_view" name="rqt_image_view" />
+<!--node pkg="rqt_image_view" type="rqt_image_view" name="rqt_image_view" /-->
 
 
 </launch>

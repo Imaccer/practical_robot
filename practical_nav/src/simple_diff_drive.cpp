@@ -32,17 +32,18 @@ const int PWM_INCREMENT =1; //the rate pwm out can change per cycle
 const double ticksPerwheelRev = 254*2; //508.8; //not in use yet..just a reference for now
 const double wheelRadius = .03575; // 55.18;
 const double wheelBase = .224; //223.8375mm actually
-const double TICKS_PER_M =1125*2;//or 2250 //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645 1125.766 t/m
+const double TICKS_PER_M =3750;//1125*2;//or 2250 //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645 1125.766 t/m
 const int KP = 238;//238 orginal
 const int DRIFT_MULTIPLIER =125;//125 original//621
-const int TURN_PWM = 35;
+const int TURN_PWM = 60;
 const int MIN_PWM = 30;
 const int MAX_PWM = 120;// original 120
 
 // left encoder multiplier
 const double L_ENC_MULT = 1;
 const double L_MOTOR_COMP = 1.33;//compensate for left motor being under powered
-
+const double L_MOTOR_COMP_REV = 1.37;//for reverse
+const double L_MOTOR_COMP_RGTTURN = 1.1;
 //left motor
 const int PWM_L = 21;
 const int MOTOR_L_FWD = 26;
@@ -101,10 +102,13 @@ cout<<"RightCycleDistance = "<<cycleDistance<<endl;
 void Set_Speeds(const geometry_msgs::Twist& cmdVel)
 {
     lastCmdMsgRcvd = ros::Time::now().toSec();
-    int b = (cmdVel.linear.x > .025 && cmdVel.linear.x < .052) ? 45 : 40;
+    int b = (abs(cmdVel.linear.x) > .0478 &&abs(cmdVel.linear.x) < .082) ? 30 : 40;
+    
+    //int b = (cmdVel.linear.x > .025 && cmdVel.linear.x < .052) ? 45 : 40;
+    double cmdVelEpsilon =abs(0.1*cmdVel.linear.x);
 //    if((leftVelocity==0 && rightVelocity==0))// || \
 //       abs(leftVelocity-rightVelocity)>0.01)
-//    {    
+//    {
 //     leftPwmReq  =KP*cmdVel.linear.x+b;
 //     rightPwmReq =KP*cmdVel.linear.x+b;
 //     cout<<"iniitial pwm request (left and right same) = "<< leftPwmReq<<endl;
@@ -118,13 +122,13 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
     {
         if(cmdVel.angular.z > .0 )//standard gentle turn
         {
-         leftPwmReq = -L_MOTOR_COMP*TURN_PWM;
-         rightPwmReq = TURN_PWM;
+         leftPwmReq = -L_MOTOR_COMP_REV*MIN_PWM;
+         rightPwmReq = MIN_PWM;
         }
         else if(cmdVel.angular.z< 0)
         {
-         leftPwmReq =   L_MOTOR_COMP*TURN_PWM;
-         rightPwmReq = -TURN_PWM;//-(1/L_MOTOR_COMP)*TURN_PWM;
+         leftPwmReq =   L_MOTOR_COMP_RGTTURN*MIN_PWM;
+         rightPwmReq = -MIN_PWM;//-(1/L_MOTOR_COMP)*TURN_PWM;
         }
         if( abs(cmdVel.angular.z>.12))//turn a little faster if angle is greater that .12
         {
@@ -137,8 +141,16 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
     {
     // if(leftVelocity==0 && rightVelocity==0)
     // {
-     leftPwmReq  =KP*L_MOTOR_COMP*cmdVel.linear.x+b;
-     rightPwmReq =KP*(1.0/L_MOTOR_COMP)*cmdVel.linear.x+b;
+     if(cmdVel.linear.x>0)
+     {
+      leftPwmReq  =KP*L_MOTOR_COMP*cmdVel.linear.x+b;
+      rightPwmReq =KP*(1.0/L_MOTOR_COMP)*cmdVel.linear.x+b;
+     }
+     else if(cmdVel.linear.x<0)
+     {
+      leftPwmReq  =KP*L_MOTOR_COMP_REV*cmdVel.linear.x-b;
+      rightPwmReq =KP*(1.0/L_MOTOR_COMP_REV)*cmdVel.linear.x-b;
+     }
      cout<<"iniitial pwm request (left and right same) = "<< leftPwmReq<<endl;
     // }
      static double prevDiff = 0;
@@ -157,7 +169,7 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
     // prevAvgAngularDiff = avgAngularDiff;
 
      //apply corrective offset to each wheel to try and go straight
-    if(abs(avgAngularDiff)>0.01)//added 6thDec2023 to try and limit overcorrections
+    if(abs(avgAngularDiff)>cmdVelEpsilon)//added 6thDec2023 to try and limit overcorrections
     {
      cout<<"in loop: "<<endl;
      cout<<"ang_vel_diff = "<<abs(avgAngularDiff)<<endl;
@@ -174,15 +186,16 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
      prevAvgAngularDiff = avgAngularDiff;
 
     }
-    else if(abs(avgAngularDiff)<=0.01)
+    else if(abs(avgAngularDiff)<=cmdVelEpsilon)
      {
       leftPwmReq -=(int)(prevAvgAngularDiff*DRIFT_MULTIPLIER);
       rightPwmReq+= (int)(prevAvgAngularDiff*DRIFT_MULTIPLIER);
-      
+
      }
    //  prevAvgAngularDiff = avgAngularDiff;
     }
 
+    //if(cmdVel.angular.z>
 
     //don't PWM values that don't do anything
     if(abs(leftPwmReq)< MIN_PWM)
@@ -255,12 +268,13 @@ void set_pin_values()
 
 
     //bump up pwm if robot is having trouble starting from stopped
-    if((leftPwmReq != 0 && leftVelocity ==0) || (rightPwmReq != 0 && leftVelocity == 0))
+/*    if((leftPwmReq != 0 && leftVelocity ==0) || (rightPwmReq != 0 && leftVelocity == 0))
     {
-     leftPwmReq *= 1.01;
-     rightPwmReq *= 1.1;
+     leftPwmReq *= 1.2;
+     rightPwmReq *= 1.2;
     }
-    /*
+    */
+    
     if(  leftPwmReq != 0 && leftVelocity == 0)
     {
         leftPwmReq *= 1.4;
@@ -269,7 +283,7 @@ void set_pin_values()
     {
         rightPwmReq *= 1.4;
     }
-    */
+    
 
     //this section increments PWM changes instead of jarring/dangeroud sudden big changes
     if (abs(leftPwmReq) > leftPwmOut)
@@ -289,6 +303,11 @@ void set_pin_values()
      rightPwmOut -= PWM_INCREMENT;
     }
 
+    if((leftPwmReq<0)^(rightPwmReq<0))
+    {
+     leftPwmOut = (leftPwmOut>TURN_PWM) ? TURN_PWM : leftPwmOut;
+     rightPwmOut = (rightPwmOut>TURN_PWM) ? TURN_PWM : rightPwmOut;
+    }
     //cap output at max defined in constants
     leftPwmOut = (leftPwmOut>MAX_PWM) ? MAX_PWM : leftPwmOut;
     rightPwmOut = (rightPwmOut>MAX_PWM) ? MAX_PWM : rightPwmOut;
