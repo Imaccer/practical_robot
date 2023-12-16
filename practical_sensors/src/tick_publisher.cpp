@@ -24,7 +24,7 @@ const int rightReverse = 20; //monitor as input that goes low when right motor s
 
 //max and min allowable values
 const int encoderMin = -32768;
-const int encoderMax = 32768;
+const int encoderMax = 32767;//32768
 
 std_msgs::Int16 leftCount;
 std_msgs::Int16 rightCount;

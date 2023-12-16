@@ -27,7 +27,8 @@
 #include <pigpiod_if2.h>
 #include <cstdlib>
 
-const int LOOP_FREQ = 50;
+const int ENCODER_RANGE = 66536;//book says 66535...16 bit range
+const int LOOP_FREQ = 30;
 const int PWM_INCREMENT =1; //the rate pwm out can change per cycle
 const double ticksPerwheelRev = 254*2; //508.8; //not in use yet..just a reference for now
 const double wheelRadius = .03575; // 55.18;
@@ -35,9 +36,12 @@ const double wheelBase = .224; //223.8375mm actually
 const double TICKS_PER_M =3750;//1125*2;//or 2250 //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645 1125.766 t/m
 const int KP = 238;//238 orginal
 const int DRIFT_MULTIPLIER =125;//125 original//621
-const int TURN_PWM = 60;
+const int TURN_PWM = 45;
+const int MAX_TURN_PWM = 85;
 const int MIN_PWM = 30;
 const int MAX_PWM = 120;// original 120
+const double VEL_MIN = 0.0478;
+const double ANG_MIN = 0.02;
 
 // left encoder multiplier
 const double L_ENC_MULT = 1;
@@ -69,10 +73,10 @@ void Calc_Left_Vel(const std_msgs::Int16& lCount)
 {
 static double lastTime = 0;
 static int lastCount = 0;
-int cycleDistance = (65535 + lCount.data - lastCount) % 65535;
+int cycleDistance = (ENCODER_RANGE + lCount.data - lastCount) % ENCODER_RANGE;
 if (cycleDistance > 10000)
     {
-        cycleDistance=0-(65535 - cycleDistance);
+        cycleDistance=0-(ENCODER_RANGE - cycleDistance);
     }
 leftVelocity = (cycleDistance*L_ENC_MULT)/TICKS_PER_M/(ros::Time::now().toSec()-lastTime);
 lastCount = lCount.data;
@@ -85,10 +89,10 @@ void Calc_Right_Vel(const std_msgs::Int16& rCount)
 {
 static double lastTime = 0;
 static int lastCount = 0;
-int cycleDistance = (65535 + rCount.data - lastCount) % 65535;
+int cycleDistance = (ENCODER_RANGE + rCount.data - lastCount) % ENCODER_RANGE;
 if (cycleDistance > 10000)
     {
-        cycleDistance=0-(65535 - cycleDistance);
+        cycleDistance=0-(ENCODER_RANGE - cycleDistance);
     }
 rightVelocity = cycleDistance/TICKS_PER_M/(ros::Time::now().toSec()-lastTime);
 lastCount=rCount.data;
@@ -102,10 +106,11 @@ cout<<"RightCycleDistance = "<<cycleDistance<<endl;
 void Set_Speeds(const geometry_msgs::Twist& cmdVel)
 {
     lastCmdMsgRcvd = ros::Time::now().toSec();
-    int b = (abs(cmdVel.linear.x) > .0478 &&abs(cmdVel.linear.x) < .082) ? 30 : 40;
+    int b = (abs(cmdVel.linear.x) >VEL_MIN &&abs(cmdVel.linear.x) < .082) ? 30 : 40;
     
     //int b = (cmdVel.linear.x > .025 && cmdVel.linear.x < .052) ? 45 : 40;
     double cmdVelEpsilon =abs(0.1*cmdVel.linear.x);
+    double cmdAngVelEpsilon = 0.01;//abs(0.1*cmdVel.angular.z);
 //    if((leftVelocity==0 && rightVelocity==0))// || \
 //       abs(leftVelocity-rightVelocity)>0.01)
 //    {
@@ -120,24 +125,72 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
    // }
     if(cmdVel.angular.z != 0)
     {
-        if(cmdVel.angular.z > .0 )//standard gentle turn
+        if(cmdVel.angular.z >= ANG_MIN)//.0 )//standard gentle left turn
         {
-         leftPwmReq = -L_MOTOR_COMP_REV*MIN_PWM;
-         rightPwmReq = MIN_PWM;
+         leftPwmReq = -L_MOTOR_COMP_REV*TURN_PWM;
+         //leftPwmReq = -L_MOTOR_COMP_RGTTURN*TURN_PWM;
+         rightPwmReq = TURN_PWM;
         }
-        else if(cmdVel.angular.z< 0)
+        else if(cmdVel.angular.z< -ANG_MIN)
         {
-         leftPwmReq =   L_MOTOR_COMP_RGTTURN*MIN_PWM;
-         rightPwmReq = -MIN_PWM;//-(1/L_MOTOR_COMP)*TURN_PWM;
+         leftPwmReq =   L_MOTOR_COMP_RGTTURN*TURN_PWM;
+         rightPwmReq = -TURN_PWM;//-(1/L_MOTOR_COMP)*TURN_PWM;
         }
-        if( abs(cmdVel.angular.z>.12))//turn a little faster if angle is greater that .12
+        else
+        {
+          leftPwmReq = 0;
+          rightPwmReq = 0;
+        }
+/*        if( abs(cmdVel.angular.z>.32))//turn a little faster if angle is greater that .12
         {
           leftPwmReq  *= 1.1;
           rightPwmReq *= 1.1;
         }
+*/
+        static double prevRotDiff = 0;
+        static double prevPrevRotDiff = 0;
+        static double prevAvgAngularRotDiff = 0;
+        double angularVelRotDifference = leftVelocity + rightVelocity; //how much faster one wheel is actually turning
+        double avgAngularRotDiff = (prevRotDiff+prevPrevRotDiff+angularVelRotDifference)/3; //average several cycles
+        cout<<"prev_rot_diff = "<<prevRotDiff<<endl;
+        cout<<"prev_prev_rot_diff = "<<prevPrevRotDiff<<endl;
+        cout<<"angular_velocity_rot_diff = "<<angularVelRotDifference<<endl;
+        cout<<"avg_vel_rot_diff = "<<avgAngularRotDiff<<endl;
+
+        prevPrevRotDiff=prevRotDiff;
+        prevRotDiff = angularVelRotDifference;
+        
+        if(abs(avgAngularRotDiff)>cmdAngVelEpsilon)//added 6thDec2023 to try and limit overcorrections
+        {
+         cout<<"in control loop: "<<endl;
+         cout<<"avg_vel_rot_diff = "<<abs(avgAngularRotDiff)<<endl;
+         cout<<"leftPwmReq_before_inc = "<<leftPwmReq<<endl;
+         cout<<"rightPwmReq_before_inc = "<<rightPwmReq<<endl;
+
+         leftPwmReq -= (int)(avgAngularRotDiff*DRIFT_MULTIPLIER);
+         rightPwmReq -= (int)(avgAngularRotDiff*DRIFT_MULTIPLIER);
+
+         
+         cout<<"leftPwmReq_after_inc = "<<leftPwmReq<<endl;
+         cout<<"rightPwmReq_after_inc = "<<rightPwmReq<<endl;
+
+         prevAvgAngularRotDiff = avgAngularRotDiff;
+
+        }
+       else if(abs(avgAngularRotDiff)<=cmdAngVelEpsilon)
+       {
+         leftPwmReq -= (int)(prevAvgAngularRotDiff*DRIFT_MULTIPLIER);
+         rightPwmReq-= (int)(prevAvgAngularRotDiff*DRIFT_MULTIPLIER);
+       }
+
 
     }
-    else if(abs(cmdVel.linear.x) > .0478 ) // should equal about pwmval of 50, this is for going straight
+    else if(abs(cmdVel.linear.x) <= VEL_MIN)
+    {
+     leftPwmReq = 0;
+     rightPwmReq = 0;
+    }
+    else if(abs(cmdVel.linear.x) >VEL_MIN ) // .0478 ) // should equal about pwmval of 50, this is for going straight
     {
     // if(leftVelocity==0 && rightVelocity==0)
     // {
@@ -275,12 +328,16 @@ void set_pin_values()
     }
     */
     
-    if(  leftPwmReq != 0 && leftVelocity == 0)
+    const double epsilon = 1e-6;
+
+    if(  leftPwmReq != 0 && (abs(leftVelocity) < epsilon))
     {
+      if(leftPwmReq<MAX_PWM)
         leftPwmReq *= 1.4;
     }
-    if( rightPwmReq != 0 && rightVelocity == 0)
+    if( rightPwmReq != 0 && (abs(rightVelocity) < epsilon)) 
     {
+      if(rightPwmReq<MAX_PWM)
         rightPwmReq *= 1.4;
     }
     
@@ -305,8 +362,8 @@ void set_pin_values()
 
     if((leftPwmReq<0)^(rightPwmReq<0))
     {
-     leftPwmOut = (leftPwmOut>TURN_PWM) ? TURN_PWM : leftPwmOut;
-     rightPwmOut = (rightPwmOut>TURN_PWM) ? TURN_PWM : rightPwmOut;
+     leftPwmOut = (leftPwmOut>MAX_TURN_PWM) ? MAX_TURN_PWM : leftPwmOut;
+     rightPwmOut = (rightPwmOut>MAX_TURN_PWM) ? MAX_TURN_PWM : rightPwmOut;
     }
     //cap output at max defined in constants
     leftPwmOut = (leftPwmOut>MAX_PWM) ? MAX_PWM : leftPwmOut;
