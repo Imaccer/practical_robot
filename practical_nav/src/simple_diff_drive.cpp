@@ -27,8 +27,8 @@
 #include <pigpiod_if2.h>
 #include <cstdlib>
 
-const int ENCODER_RANGE = 66536;//book says 66535...16 bit range
-const int LOOP_FREQ = 30;
+const int ENCODER_RANGE = 65535;//book says 65535...16 bit range
+const int LOOP_FREQ = 30;//must align with rqt steering cmd vel freq
 const int PWM_INCREMENT =1; //the rate pwm out can change per cycle
 const double ticksPerwheelRev = 254*2; //508.8; //not in use yet..just a reference for now
 const double wheelRadius = .03575; // 55.18;
@@ -36,16 +36,17 @@ const double wheelBase = .224; //223.8375mm actually
 const double TICKS_PER_M =3750;//1125*2;//or 2250 //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645 1125.766 t/m
 const int KP = 238;//238 orginal
 const int DRIFT_MULTIPLIER =125;//125 original//621
-const int TURN_PWM = 45;
+const int TURN_PWM = 40;
 const int MAX_TURN_PWM = 85;
 const int MIN_PWM = 30;
-const int MAX_PWM = 120;// original 120
-const double VEL_MIN = 0.0478;
-const double ANG_MIN = 0.02;
+const int MAX_PWM = 90;// original 120
+const double VEL_MIN = 0.055;//0.0478;
+//const double ANG_MIN = 0.02;
+//const double MAX_VEL_DIFF = 0;
 
 // left encoder multiplier
 const double L_ENC_MULT = 1;
-const double L_MOTOR_COMP = 1.33;//compensate for left motor being under powered
+const double L_MOTOR_COMP = 1.3;//1.33compensate for left motor being under powered
 const double L_MOTOR_COMP_REV = 1.37;//for reverse
 const double L_MOTOR_COMP_RGTTURN = 1.1;
 //left motor
@@ -73,12 +74,14 @@ void Calc_Left_Vel(const std_msgs::Int16& lCount)
 {
 static double lastTime = 0;
 static int lastCount = 0;
+cout<<"lastCountLeft = "<<lastCount<<endl;
 int cycleDistance = (ENCODER_RANGE + lCount.data - lastCount) % ENCODER_RANGE;
 if (cycleDistance > 10000)
     {
         cycleDistance=0-(ENCODER_RANGE - cycleDistance);
     }
-leftVelocity = (cycleDistance*L_ENC_MULT)/TICKS_PER_M/(ros::Time::now().toSec()-lastTime);
+cout<<"time diff left = "<<ros::Time::now().toSec()-lastTime<<endl;
+leftVelocity = cycleDistance/TICKS_PER_M/(ros::Time::now().toSec()-lastTime);
 lastCount = lCount.data;
 lastTime = ros::Time::now().toSec();
 cout<<"LeftCount = "<<lCount.data<<endl;
@@ -89,11 +92,13 @@ void Calc_Right_Vel(const std_msgs::Int16& rCount)
 {
 static double lastTime = 0;
 static int lastCount = 0;
+cout<<"lastCountRight = "<<lastCount<<endl;
 int cycleDistance = (ENCODER_RANGE + rCount.data - lastCount) % ENCODER_RANGE;
 if (cycleDistance > 10000)
     {
         cycleDistance=0-(ENCODER_RANGE - cycleDistance);
     }
+cout<<"time diff right = "<<ros::Time::now().toSec()-lastTime<<endl;
 rightVelocity = cycleDistance/TICKS_PER_M/(ros::Time::now().toSec()-lastTime);
 lastCount=rCount.data;
 lastTime = ros::Time::now().toSec();
@@ -107,31 +112,19 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
 {
     lastCmdMsgRcvd = ros::Time::now().toSec();
     int b = (abs(cmdVel.linear.x) >VEL_MIN &&abs(cmdVel.linear.x) < .082) ? 30 : 40;
-    
     //int b = (cmdVel.linear.x > .025 && cmdVel.linear.x < .052) ? 45 : 40;
     double cmdVelEpsilon =abs(0.1*cmdVel.linear.x);
-    double cmdAngVelEpsilon = 0.01;//abs(0.1*cmdVel.angular.z);
-//    if((leftVelocity==0 && rightVelocity==0))// || \
-//       abs(leftVelocity-rightVelocity)>0.01)
-//    {
-//     leftPwmReq  =KP*cmdVel.linear.x+b;
-//     rightPwmReq =KP*cmdVel.linear.x+b;
-//     cout<<"iniitial pwm request (left and right same) = "<< leftPwmReq<<endl;
-//    }
-   // else if(leftVelocity!=0&&rightVelocity!=0 && abs(leftVelocity-rightVelocity)<=0.01)
-   // {
-   //  leftPwmReq = leftPwmReq;
-   //  rightPwmReq = rightPwmReq;
-   // }
+    double cmdAngVelEpsilon = 0.001;//abs(0.1*cmdVel.angular.z);
+
     if(cmdVel.angular.z != 0)
     {
-        if(cmdVel.angular.z >= ANG_MIN)//.0 )//standard gentle left turn
+        if(cmdVel.angular.z >= .0 )//standard gentle left turn
         {
          leftPwmReq = -L_MOTOR_COMP_REV*TURN_PWM;
          //leftPwmReq = -L_MOTOR_COMP_RGTTURN*TURN_PWM;
          rightPwmReq = TURN_PWM;
         }
-        else if(cmdVel.angular.z< -ANG_MIN)
+        else if(cmdVel.angular.z<.0) 
         {
          leftPwmReq =   L_MOTOR_COMP_RGTTURN*TURN_PWM;
          rightPwmReq = -TURN_PWM;//-(1/L_MOTOR_COMP)*TURN_PWM;
@@ -141,12 +134,7 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
           leftPwmReq = 0;
           rightPwmReq = 0;
         }
-/*        if( abs(cmdVel.angular.z>.32))//turn a little faster if angle is greater that .12
-        {
-          leftPwmReq  *= 1.1;
-          rightPwmReq *= 1.1;
-        }
-*/
+
         static double prevRotDiff = 0;
         static double prevPrevRotDiff = 0;
         static double prevAvgAngularRotDiff = 0;
@@ -160,7 +148,7 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
         prevPrevRotDiff=prevRotDiff;
         prevRotDiff = angularVelRotDifference;
         
-        if(abs(avgAngularRotDiff)>cmdAngVelEpsilon)//added 6thDec2023 to try and limit overcorrections
+        if(abs(avgAngularRotDiff)>cmdAngVelEpsilon)
         {
          cout<<"in control loop: "<<endl;
          cout<<"avg_vel_rot_diff = "<<abs(avgAngularRotDiff)<<endl;
@@ -170,7 +158,6 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
          leftPwmReq -= (int)(avgAngularRotDiff*DRIFT_MULTIPLIER);
          rightPwmReq -= (int)(avgAngularRotDiff*DRIFT_MULTIPLIER);
 
-         
          cout<<"leftPwmReq_after_inc = "<<leftPwmReq<<endl;
          cout<<"rightPwmReq_after_inc = "<<rightPwmReq<<endl;
 
@@ -182,18 +169,14 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
          leftPwmReq -= (int)(prevAvgAngularRotDiff*DRIFT_MULTIPLIER);
          rightPwmReq-= (int)(prevAvgAngularRotDiff*DRIFT_MULTIPLIER);
        }
-
-
     }
     else if(abs(cmdVel.linear.x) <= VEL_MIN)
     {
      leftPwmReq = 0;
      rightPwmReq = 0;
     }
-    else if(abs(cmdVel.linear.x) >VEL_MIN ) // .0478 ) // should equal about pwmval of 50, this is for going straight
+    else if(abs(cmdVel.linear.x) >VEL_MIN ) // .0478 
     {
-    // if(leftVelocity==0 && rightVelocity==0)
-    // {
      if(cmdVel.linear.x>0)
      {
       leftPwmReq  =KP*L_MOTOR_COMP*cmdVel.linear.x+b;
@@ -204,35 +187,32 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
       leftPwmReq  =KP*L_MOTOR_COMP_REV*cmdVel.linear.x-b;
       rightPwmReq =KP*(1.0/L_MOTOR_COMP_REV)*cmdVel.linear.x-b;
      }
-     cout<<"iniitial pwm request (left and right same) = "<< leftPwmReq<<endl;
-    // }
+
      static double prevDiff = 0;
      static double prevPrevDiff = 0;
      static double prevAvgAngularDiff = 0;
-     double angularVelDifference = leftVelocity - rightVelocity; //how much faster one wheel is actually turning
-     double avgAngularDiff = (prevDiff+prevPrevDiff+angularVelDifference)/3; //average several cycles
+
+     double angularVelDifference = leftVelocity - rightVelocity; 
+     double avgAngularDiff = (prevDiff+prevPrevDiff+angularVelDifference)/3; 
 
      cout<<"prev_diff = "<<prevDiff<<endl;
      cout<<"prev_prev_diff = "<<prevPrevDiff<<endl;
      cout<<"angular_velocity_diff = "<<angularVelDifference<<endl;
-     cout<<"ang_vel_diff = "<<abs(avgAngularDiff)<<endl;
+     cout<<"avg_vel_diff = "<<abs(avgAngularDiff)<<endl;
 
      prevPrevDiff=prevDiff;
      prevDiff = angularVelDifference;
-    // prevAvgAngularDiff = avgAngularDiff;
-
-     //apply corrective offset to each wheel to try and go straight
-    if(abs(avgAngularDiff)>cmdVelEpsilon)//added 6thDec2023 to try and limit overcorrections
+     
+    if(abs(avgAngularDiff)>cmdVelEpsilon)
     {
-     cout<<"in loop: "<<endl;
+     cout<<"in linear control loop: "<<endl;
      cout<<"ang_vel_diff = "<<abs(avgAngularDiff)<<endl;
      cout<<"leftPwmReq_before_inc = "<<leftPwmReq<<endl;
      cout<<"rightPwmReq_before_inc = "<<rightPwmReq<<endl;
 
-     leftPwmReq -= (int)(avgAngularDiff*DRIFT_MULTIPLIER);// -ve because left motor generally turns slower, therefore angVelDiff -ve, therefore -(-ve) actually adds to left to balance and += decreases right
+     leftPwmReq -= (int)(avgAngularDiff*DRIFT_MULTIPLIER); 
      rightPwmReq += (int)(avgAngularDiff*DRIFT_MULTIPLIER);
 
-//      cout<<"ang_vel_diff = "<<abs(avgAngularDiff)<<endl;
      cout<<"leftPwmReq_after_inc = "<<leftPwmReq<<endl;
      cout<<"rightPwmReq_after_inc = "<<rightPwmReq<<endl;
 
@@ -245,12 +225,8 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
       rightPwmReq+= (int)(prevAvgAngularDiff*DRIFT_MULTIPLIER);
 
      }
-   //  prevAvgAngularDiff = avgAngularDiff;
     }
 
-    //if(cmdVel.angular.z>
-
-    //don't PWM values that don't do anything
     if(abs(leftPwmReq)< MIN_PWM)
     {
      leftPwmReq=0;
@@ -318,27 +294,28 @@ void set_pin_values()
      gpio_write(pi, MOTOR_R_FWD, 1);
      gpio_write(pi, MOTOR_R_REV, 1);
     }
-
+/*
+    const double epsilon = 1e-6;
 
     //bump up pwm if robot is having trouble starting from stopped
-/*    if((leftPwmReq != 0 && leftVelocity ==0) || (rightPwmReq != 0 && leftVelocity == 0))
+    if((leftPwmReq != 0 && abs(leftVelocity)<epsilon) || (rightPwmReq != 0 && abs(rightVelocity) <epsilon))
     {
      leftPwmReq *= 1.2;
      rightPwmReq *= 1.2;
     }
-    */
+  */  
     
     const double epsilon = 1e-6;
 
     if(  leftPwmReq != 0 && (abs(leftVelocity) < epsilon))
     {
-      if(leftPwmReq<MAX_PWM)
-        leftPwmReq *= 1.4;
+      if(abs(leftPwmReq)<MAX_TURN_PWM)
+        leftPwmReq *= 1.1;
     }
     if( rightPwmReq != 0 && (abs(rightVelocity) < epsilon)) 
     {
-      if(rightPwmReq<MAX_PWM)
-        rightPwmReq *= 1.4;
+      if(abs(rightPwmReq)<MAX_TURN_PWM)
+        rightPwmReq *= 1.1;
     }
     
 
@@ -440,7 +417,7 @@ int main(int argc, char **argv)
     ros::Subscriber subForLeftCounts = node.subscribe("leftWheel",1000, Calc_Left_Vel,ros::TransportHints().tcpNoDelay());
     ros::Subscriber subForVelocity = node.subscribe("cmd_vel", 1, Set_Speeds,ros::TransportHints().tcpNoDelay());
 
-    ros::Rate loop_rate(LOOP_FREQ);//think this may need to be multiple of 10 to avoid conflict with motor driver signals?
+    ros::Rate loop_rate(LOOP_FREQ);//
     while(ros::ok())
     {
      ros::spinOnce();
