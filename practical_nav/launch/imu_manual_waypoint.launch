@@ -1,0 +1,27 @@
+<launch>
+
+<node pkg="practical_sensors" type="tick_publisher" name="tick_publisher"/>
+
+<node pkg="practical_nav" type="simple_diff_drive" name="simple_diff_drive"/>
+
+<!--node pkg="practical_localization" type="encoder_odom_publisher"
+name="encoder_odom_publisher"/>
+-->
+
+<node pkg="bn0055_fusion_imu" type="bn0055_accel_gyro_fusion_pub"
+name="bn0055_accel_gyro_fusion_pub">
+</node>
+
+<node pkg="practical_localization" type="odom_plus" name="odom_plus"
+output="screen">
+</node>
+
+<node pkg="practical_nav" type="simple_drive_controller"
+name="simple_drive_controller">
+  <remap from="waypoint_2d" to="goal_2d" />
+</node>
+
+<node pkg="practical_localization" type="manual_pose_and_goal_pub"
+name="manual_pose_and_goal_pub" output="screen" />
+
+</launch>

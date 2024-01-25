@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(practical_nav)
+project(practical_localization)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -9,10 +9,12 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
+  nav_msgs
   roscpp
   sensor_msgs
   std_msgs
   tf
+  tf2_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -72,7 +74,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   sensor_msgs#   std_msgs
+#   geometry_msgs#   nav_msgs#   sensor_msgs#   std_msgs
 # )
 
 ################################################
@@ -106,8 +108,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES practical_nav
-#  CATKIN_DEPENDS geometry_msgs roscpp sensor_msgs std_msgs tf
+#  LIBRARIES practical_localization
+#  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp sensor_msgs std_msgs tf tf2_ros
 #  DEPENDS system_lib
 )
 
@@ -124,7 +126,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/practical_nav.cpp
+#   src/${PROJECT_NAME}/practical_localization.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -135,7 +137,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/practical_nav_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/practical_localization_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -199,7 +201,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_practical_nav.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_practical_localization.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
@@ -210,10 +212,17 @@ include_directories(
 INCLUDE_DIRECTORIES(/usr/local/lib)
 LINK_DIRECTORIES(/usr/local/lib)
 
+add_executable(encoder_odom_publisher src/encoder_odom_publisher.cpp)
+target_link_libraries(encoder_odom_publisher ${catkin_LIBRARIES})
 
-add_executable(simple_diff_drive src/simple_diff_drive.cpp)
-target_link_libraries(simple_diff_drive libpigpiod_if2.so ${catkin_LIBRARIES})
+add_executable(manual_pose_and_goal_pub src/manual_pose_and_goal_pub.cpp)
+target_link_libraries(manual_pose_and_goal_pub ${catkin_LIBRARIES})
 
-add_executable(simple_drive_controller src/simple_drive_controller.cpp)
-target_link_libraries(simple_drive_controller ${catkin_LIBRARIES})
+add_executable(rviz_click_to_2d src/rviz_click_to_2d.cpp)
+target_link_libraries(rviz_click_to_2d ${catkin_LIBRARIES})
 
+add_executable(odom_plus src/odom_plus.cpp)
+target_link_libraries(odom_plus ${catkin_LIBRARIES})
+
+add_executable(tf_pub src/tf_pub.cpp)
+target_link_libraries(tf_pub ${catkin_LIBRARIES})
