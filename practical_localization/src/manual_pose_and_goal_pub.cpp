@@ -26,13 +26,18 @@ void pub_msg(float x, float y, float yaw, int choice)
     geometry_msgs::PoseWithCovarianceStamped pose;
     geometry_msgs::PoseStamped goal;
     geometry_msgs::PoseStamped rpy;
+    
+
+    tf2::Quaternion q;
+    q.setRPY(0, 0, yaw);
+    rpy.pose.orientation.x = q.x();
+    rpy.pose.orientation.y = q.y();
+    rpy.pose.orientation.z = q.z();
+    rpy.pose.orientation.w = q.w();
+
     rpy.pose.position.x = x;
     rpy.pose.position.y = y;
     rpy.pose.position.z = 0;
-    rpy.pose.orientation.x = 0;
-    rpy.pose.orientation.y = 0;
-    rpy.pose.orientation.z = yaw;
-    rpy.pose.orientation.w = 0;
 
     if(choice == 1) //publish a pose
     {
@@ -51,14 +56,8 @@ void pub_msg(float x, float y, float yaw, int choice)
         pub.publish(goal);
     }
 
-     tf2::Quaternion q;
-     q.setRPY(0, 0, yaw);
-        rpy.pose.orientation.x = q.x();
-        rpy.pose.orientation.y = q.y();
-        rpy.pose.orientation.z = q.z();
-        rpy.pose.orientation.w = q.w();
 
-        if(choice == 1) //publish a pose
+    if(choice == 1) //publish a pose
     {
         pose.pose.pose = rpy.pose;
         pub3.publish(pose);

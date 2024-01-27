@@ -1,43 +1,22 @@
 <launch>
-<node pkg="tf" type="static_transform_publisher"
-name="tf_base_footprint_base_link"
-  args ="0 0 0.1 0 0 0 base_footprint base_link 20"/>
-
-<node pkg="tf" type="static_transform_publisher"
-name="tf_base_link_imu"
-  args ="-0.12 0.08 0 0 0 0 base_link imu 20"/>
-
-
-<node pkg="tf" type="static_transform_publisher" name="tf_map_odom" args="0
-0 0 0 0 0 map odom 10" />
-
-<!-- Comment out if another node provides odom to base_link transform -->
-<!--node pkg="practical_localization" type="tf_pub" name="tf_pub" /-->
 
 <node pkg="practical_sensors" type="tick_publisher" name="tick_publisher"/>
 
 <node pkg="practical_nav" type="simple_diff_drive" name="simple_diff_drive"/>
 
 <node pkg="practical_localization" type="encoder_odom_publisher"
-name="encoder_odom_publisher">
-</node>
+name="encoder_odom_publisher"/>
+
 
 <node pkg="bn0055_fusion_imu" type="bn0055_accel_gyro_fusion_pub"
 name="bn0055_accel_gyro_fusion_pub">
 </node>
 
-<!--
-<node pkg="practical_nav" type="ekf_drive_controller"
-name="ekf_drive_controller" >
+<node pkg="practical_nav" type="simple_drive_controller"
+name="simple_drive_controller">
   <remap from="waypoint_2d" to="goal_2d" />
 </node>
--->
 
-<!--node pkg="practical_nav" type="simple_drive_controller"
-name="simple_drive_controller" >
-  <remap from="waypoint_2d" to="goal_2d" />
-</node>
--->
 <node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf"
 output="screen">
   <param name="output_frame" value="odom"/>
@@ -48,9 +27,8 @@ output="screen">
   <param name="vo_used" value="false"/>
   <param name="debug" value="true" />
   <param name="self_diagnose" value="true" />
-  <remap from="imu_data" to="imu" />
-  <remap from="odom" to="encoder/odom_quat" />
-  <remap from="tf_static" to="tf" />
+  <param name="imu_topic" value="imu" />
+  <param name="odom_topic" value="encoder/odom" />
 </node>
 
 <node pkg="practical_localization" type="manual_pose_and_goal_pub"

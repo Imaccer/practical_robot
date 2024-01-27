@@ -2,7 +2,7 @@
 *simple_drive_controller.cpp is an example ROS node accompanying the book
 *Practical Robotics in C++.
 *
-*This node subscribes to the encoder/odom topic as well as waypoint_2d. When a new
+*This node subscribes to the robot_pose_ekf/odom_combine topic as well as waypoint_2d. When a new
 *waypoint is recieved, this node calculates a straight course to the waypoint without obstacle avoidance
 *and publishes cmd_vel msgs to first turn to the waypoint, then go forward. If the angle drifts
 *outside of "close enough" while enroute, the robot will stop and correct is heading before continuing.
@@ -17,6 +17,7 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include <nav_msgs/Odometry.h>
 #include <cstdlib>
 #include <math.h>
@@ -26,10 +27,11 @@ using namespace std;
 
 ros::Publisher pubVelocity;
 nav_msgs::Odometry odom;
+//geometry_msgs::PoseWithCovarianceStamped odom;
 geometry_msgs::Twist cmdVel;
 geometry_msgs::PoseStamped desired;
 const double PI = 3.141592;
-const double Ka =.05;// .35;
+const double Ka =0.35;//.05;// .35;
 const double Klv = .66;
 const double initialX = 5.0;
 const double initialY = 5.0;
@@ -39,11 +41,20 @@ const double MAX_LINEAR_VEL = 1;
 bool waypointActive = false;
 
 
-void update_pose(const nav_msgs::Odometry &currentOdom)
+//void update_pose(const nav_msgs::Odometry &currentOdom)
+void update_pose(const geometry_msgs::PoseWithCovarianceStamped &currentOdom)
 {
+    odom.header.frame_id = currentOdom.header.frame_id;
+
     odom.pose.pose.position.x = currentOdom.pose.pose.position.x;
     odom.pose.pose.position.y = currentOdom.pose.pose.position.y;
     odom.pose.pose.orientation.z = currentOdom.pose.pose.orientation.z;
+    
+    cout << "currentOdom msg header: " << currentOdom.header.frame_id << endl
+         << "odom msg header: " << odom.header.frame_id << endl;
+
+    //cout << "currentOdom msg child frame: " << currentOdom.child_frame_id << endl
+    //     << "odom msg child frame: " << odom.child_frame_id << endl;
 }
 
 void update_goal(const geometry_msgs::PoseStamped &desiredPose)
@@ -72,7 +83,7 @@ double getAngularError()
     double angularError = thetaBearing - odom.pose.pose.orientation.z;
     angularError = (angularError > PI)  ? angularError - (2*PI) : angularError;
     angularError = (angularError < -PI) ? angularError + (2*PI) : angularError;
-cout<<"angular error = " <<angularError<<endl;
+cout<<"angular error within function call  = " <<angularError<<endl;
     return angularError;
 }
 
@@ -90,6 +101,8 @@ void set_velocity()
     static bool location_met = true;
     double final_desired_heading_error = desired.pose.orientation.z - odom.pose.pose.orientation.z;
 
+    cout << "Final desired heading error = " << final_desired_heading_error << endl;
+
     if(abs(getDistanceError()) >= .05)
         {
         location_met = false;
@@ -100,6 +113,9 @@ void set_velocity()
         }
 
     double angularError = (location_met == false) ? getAngularError() : final_desired_heading_error;
+
+    cout << "Checking the ang error after conditional: " << angularError << endl;
+
     if (abs(angularError) > .15)
         {
          angle_met = false;
@@ -132,6 +148,12 @@ void set_velocity()
         }
 
     pubVelocity.publish(cmdVel);
+    
+    cout << "Location met: " << location_met << endl;
+    cout << "Angle met: " << angle_met << endl;
+
+    cout << "Desired pose orientation z: " << desired.pose.orientation.z << endl
+         << "Current pose orientation z: " << odom.pose.pose.orientation.z << endl;
 
 }
 
@@ -139,12 +161,12 @@ void set_velocity()
 int main(int argc, char **argv)
 {
     desired.pose.position.x = -1;
-    ros::init(argc, argv, "simple_drive_controller");
+    ros::init(argc, argv, "ekf_drive_controller");
     ros::NodeHandle node;
 
     //Subscribe to topics
-    ros::Subscriber subCurrentPose = node.subscribe("encoder/odom", 10, update_pose, ros::TransportHints().tcpNoDelay());
-    //ros::Subscriber subCurrentPose = node.subscribe("robot_pose_ekf/odom_combined", 10, update_pose, ros::TransportHints().tcpNoDelay());
+    //ros::Subscriber subCurrentPose = node.subscribe("encoder/odom", 10, update_pose, ros::TransportHints().tcpNoDelay());
+    ros::Subscriber subCurrentPose = node.subscribe("robot_pose_ekf/odom_combined", 10, update_pose, ros::TransportHints().tcpNoDelay());
     ros::Subscriber subDesiredPose = node.subscribe("waypoint_2d", 1, update_goal, ros::TransportHints().tcpNoDelay());
     pubVelocity = node.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 
@@ -159,6 +181,7 @@ int main(int argc, char **argv)
         cout << "goal = " << desired.pose.position.x << ", " << desired.pose.position.y << endl
              << "current x,y = " << odom.pose.pose.position.x << ", " << odom.pose.pose.position.y << endl
              << "  Distance error = " << getDistanceError() << endl;
+            // << "  Angular error = " << getAngularError() << endl;
         cout << "cmd_vel = " << cmdVel.linear.x <<" ,  "<<cmdVel.angular.z<< endl;
         loop_rate.sleep();
     }

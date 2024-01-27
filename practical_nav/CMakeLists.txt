@@ -217,3 +217,5 @@ target_link_libraries(simple_diff_drive libpigpiod_if2.so ${catkin_LIBRARIES})
 add_executable(simple_drive_controller src/simple_drive_controller.cpp)
 target_link_libraries(simple_drive_controller ${catkin_LIBRARIES})
 
+add_executable(ekf_drive_controller src/ekf_drive_controller.cpp)
+target_link_libraries(ekf_drive_controller ${catkin_LIBRARIES})
