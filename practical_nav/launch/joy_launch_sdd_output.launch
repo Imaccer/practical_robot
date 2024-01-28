@@ -1,0 +1,28 @@
+<launch>
+
+<rosparam file="$(find practical_nav)/config/joystick.yaml"/>
+
+<node pkg="practical_sensors" type="tick_publisher" name="tick_publisher"/>
+
+
+<node pkg="practical_nav" type="simple_diff_drive" name="simple_diff_drive"
+output ="screen"/>
+
+<!--node pkg="rplidar_ros" type="rplidarNode" name="rplidarNode" /-->
+
+<node pkg="joy" type="joy_node" name="joystick">
+  <param name="autorepeat_rate" value="20" />
+</node>
+
+<node pkg="joy_teleop" type="joy_teleop.py" name="joy_teleop">
+</node>
+
+<!--node pkg="usb_cam" type="usb_cam_node" name="usb_cam_node" output="log"
+respawn="false">
+  <param name="framerate" value="10" />
+  <param name="image_width" value="320"/>
+  <param name="image_height" value="240"/>
+</node>
+-->
+
+</launch>

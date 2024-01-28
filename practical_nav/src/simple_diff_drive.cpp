@@ -30,8 +30,8 @@ const double ticksPerwheelRev = 254*2; //508.8; //not in use yet..just a referen
 const double wheelRadius = .03575; // 55.18;
 const double wheelBase = .224; //223.8375mm actually
 const double TICKS_PER_M =1125*2;//or 2250 //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645 1125.766 t/m
-const int KP = 238;//238 orginal
-const int DRIFT_MULTIPLIER =125;//125 original//621
+const int KP = 20;//238 orginal
+const int DRIFT_MULTIPLIER =250;//125;// original//621
 const int TURN_PWM = 40;
 const int MAX_TURN_PWM = 85;
 const int MIN_PWM = 30;
@@ -109,7 +109,7 @@ void Set_Speeds(const geometry_msgs::Twist& cmdVel)
     lastCmdMsgRcvd = ros::Time::now().toSec();
     int b = (abs(cmdVel.linear.x) >VEL_MIN &&abs(cmdVel.linear.x) < .082) ? 30 : 40;
     //int b = (cmdVel.linear.x > .025 && cmdVel.linear.x < .052) ? 45 : 40;
-    double cmdVelEpsilon =abs(0.1*cmdVel.linear.x);
+    double cmdVelEpsilon =0.01;//abs(0.1*cmdVel.linear.x);
     double cmdAngVelEpsilon = 0.001;//abs(0.1*cmdVel.angular.z);
 
     if(abs(cmdVel.angular.z) > 0.01)
