@@ -32,13 +32,13 @@ nav_msgs::Odometry odom;
 geometry_msgs::Twist cmdVel;
 geometry_msgs::PoseStamped desired;
 const double PI = 3.141592;
-const double Ka =0.05;//.05;// .35;
-const double Klv = .66;
+const double Ka =0.15;//.05;// .35;
+const double Klv = .86;
 const double initialX = 5.0;
 const double initialY = 5.0;
-const double angularTolerance = .1;//.1;
-const double distanceTolerance = .03;//0.05
-const double finalHeadingTolerance = 0.03;
+const double angularTolerance = .15;//.1;
+const double distanceTolerance = .05;//0.05
+const double finalHeadingTolerance = 0.1;
 const double MAX_LINEAR_VEL = 1;
 bool waypointActive = false;
 
@@ -173,6 +173,9 @@ void set_velocity()
          angle_met = true;
         }
 
+    cout << "checking location_met: "<< location_met << endl;
+    cout << "checking angle_met: " << angle_met << endl;
+
     if (waypointActive == true && angle_met == false)
         {
          cmdVel.angular.z = Ka * angularError;
@@ -183,20 +186,31 @@ void set_velocity()
          cmdVel.linear.x = Klv * getDistanceError();
          cmdVel.angular.z = 0;
         }
+    else if (waypointActive == true&& abs(getDistanceError()-distanceTolerance)<0.02 && abs(getDistanceError()) >= distanceTolerance && location_met == false)
+        {
+         cmdVel.linear.x = 2*Klv * getDistanceError();
+         cmdVel.angular.z = 0;
+        }
     else 
     {
         cout << "********I'm HERE, now set final desired heading! **********"<<endl;
         location_met = true;
     }
 
-    if (location_met && (abs(final_desired_heading_error) <= finalHeadingTolerance))
+    if (location_met==true && (abs(final_desired_heading_error) <= finalHeadingTolerance))
         {
          cout<<"Target Achieved"<<endl;
+         angle_met = true;
          waypointActive = false;
         }
-    else if (location_met && waypointActive==true && abs(getDistanceError())<distanceTolerance && abs(final_desired_heading_error)>finalHeadingTolerance)   
+    else if (location_met==true && waypointActive==true && abs(getDistanceError())<distanceTolerance && abs(final_desired_heading_error)>finalHeadingTolerance)   
     {
-         cmdVel.angular.z = Ka * final_desired_heading_error ;
+         cmdVel.angular.z = Ka * final_desired_heading_error;
+         cmdVel.linear.x = 0;
+    }
+    else if (location_met==true && abs(final_desired_heading_error-finalHeadingTolerance)<0.2 && waypointActive==true && abs(getDistanceError())<distanceTolerance && abs(final_desired_heading_error)>finalHeadingTolerance)   
+    {
+         cmdVel.angular.z = 1.5*Ka * final_desired_heading_error;
          cmdVel.linear.x = 0;
     }
 
