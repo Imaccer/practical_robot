@@ -12,7 +12,8 @@
 *Author: Lloyd Brombach (lbrombach2@gmail.com)
 *11/7/2019
 */
-
+#include <thread>
+#include <chrono>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include "ros/ros.h"
@@ -41,7 +42,8 @@ const double distanceTolerance = .05;//0.05
 const double finalHeadingTolerance = 0.1;
 const double MAX_LINEAR_VEL = 1;
 bool waypointActive = false;
-
+const double VEL_MIN = 0.06;//0.055;//make sure same as SDD
+const double ANG_VEL_MIN = 0.011;//SDD hardcoded 
 
 tf2::Quaternion createQuaternionFromPose(const geometry_msgs::Pose &pose){
 
@@ -147,7 +149,10 @@ void set_velocity()
     tf2::Quaternion current_quat = createQuaternionFromPose(odom.pose.pose);
     current_quat.normalize();
     
-    double final_desired_heading_error = tf2::angleShortestPath(desired_quat, current_quat);
+    //double final_desired_heading_error = tf2::angleShortestPath(desired_quat, current_quat);
+    double final_desired_heading_error = tf2::angleShortestPath(current_quat, desired_quat);
+//    final_desired_heading_error = (final_desired_heading_error > PI)  ? final_desired_heading_error - (2*PI) : final_desired_heading_error ;
+//    final_desired_heading_error = (final_desired_heading_error < -PI) ?final_desired_heading_error  + (2*PI) : final_desired_heading_error ;
 
     cout << "Final desired heading error = " << final_desired_heading_error << endl;
 
@@ -163,6 +168,8 @@ void set_velocity()
     double angularError = (location_met == false) ? getAngularError() : final_desired_heading_error;
 
     cout << "Checking the ang error after conditional: " << angularError << endl;
+    cout << "abs of angularError = " << abs(angularError) << endl;
+
 
     if (abs(angularError) >= angularTolerance)//.15)
         {
@@ -185,35 +192,63 @@ void set_velocity()
         {
          cmdVel.linear.x = Klv * getDistanceError();
          cmdVel.angular.z = 0;
+         if (cmdVel.linear.x <= VEL_MIN)
+         {
+           cmdVel.linear.x = VEL_MIN;
+         }
+
         }
+    /*
     else if (waypointActive == true&& abs(getDistanceError()-distanceTolerance)<0.02 && abs(getDistanceError()) >= distanceTolerance && location_met == false)
         {
          cmdVel.linear.x = 2*Klv * getDistanceError();
          cmdVel.angular.z = 0;
         }
+        */
     else 
     {
         cout << "********I'm HERE, now set final desired heading! **********"<<endl;
         location_met = true;
+
+        cout << "loc true, angularError = " << angularError << endl;
+        cout << " waypointActive: " << waypointActive << endl;
     }
 
-    if (location_met==true && (abs(final_desired_heading_error) <= finalHeadingTolerance))
+    if (location_met==true && (abs(angularError) <= finalHeadingTolerance))
         {
          cout<<"Target Achieved"<<endl;
+
          angle_met = true;
          waypointActive = false;
+        
         }
-    else if (location_met==true && waypointActive==true && abs(getDistanceError())<distanceTolerance && abs(final_desired_heading_error)>finalHeadingTolerance)   
+    //else if (location_met==true && waypointActive==true && abs(angularError)>finalHeadingTolerance)   
+    else if (waypointActive==true && location_met==true && abs(angularError)>finalHeadingTolerance)   
     {
-         cmdVel.angular.z = Ka * final_desired_heading_error;
+         cout << "Final angle correction: "<< angularError << endl;
+         cmdVel.angular.z = 0.25* Ka * angularError;
          cmdVel.linear.x = 0;
+         if (abs(cmdVel.angular.z) <= ANG_VEL_MIN && cmdVel.angular.z>0)
+         {
+           cmdVel.angular.z = ANG_VEL_MIN;
+         }
+         else if (abs(cmdVel.angular.z) <= ANG_VEL_MIN && cmdVel.angular.z<0)
+         {
+           cmdVel.angular.z = -ANG_VEL_MIN;
+         }
+
+
     }
-    else if (location_met==true && abs(final_desired_heading_error-finalHeadingTolerance)<0.2 && waypointActive==true && abs(getDistanceError())<distanceTolerance && abs(final_desired_heading_error)>finalHeadingTolerance)   
+    /*
+    else if (location_met==true && abs(final_desired_heading_error-finalHeadingTolerance)<0.2 && waypointActive==true && abs(final_desired_heading_error)>finalHeadingTolerance)   
     {
+         cout << "Final heading adjustment when close." << endl;
+         
          cmdVel.angular.z = 1.5*Ka * final_desired_heading_error;
          cmdVel.linear.x = 0;
-    }
 
+    }
+*/
     pubVelocity.publish(cmdVel);
     
     cout << "Location met: " << location_met << endl;
@@ -237,7 +272,7 @@ int main(int argc, char **argv)
     ros::Subscriber subDesiredPose = node.subscribe("waypoint_2d", 1, update_goal, ros::TransportHints().tcpNoDelay());
     pubVelocity = node.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 
-    ros::Rate loop_rate(30);
+    ros::Rate loop_rate(50);
     while (ros::ok())
     {
         ros::spinOnce();

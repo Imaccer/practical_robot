@@ -1,15 +1,15 @@
 <launch>
 <node pkg="tf" type="static_transform_publisher"
 name="tf_base_footprint_base_link"
-  args ="0 0 0.1 0 0 0 base_footprint base_link 20"/>
+  args ="0 0 0.1 0 0 0 base_footprint base_link 50"/>
 
 <node pkg="tf" type="static_transform_publisher"
 name="tf_base_link_imu"
-  args ="-0.12 0.08 0 0 0 0 base_link imu 20"/>
+  args ="-0.12 0.08 0 0 0 0 base_link imu 50"/>
 
 
 <node pkg="tf" type="static_transform_publisher" name="tf_map_odom" args="0
-0 0 0 0 0 map odom 10" />
+0 0 0 0 0 map odom 50" />
 
 <!-- Comment out if another node provides odom to base_link transform -->
 <!--node pkg="practical_localization" type="tf_pub" name="tf_pub" /-->

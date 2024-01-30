@@ -24,7 +24,7 @@
 #include <cstdlib>
 
 const int ENCODER_RANGE = 65535;//book says 65535...16 bit range
-const int LOOP_FREQ = 50;//must align with rqt steering cmd vel freq
+const int LOOP_FREQ = 90;//must align with rqt steering cmd vel freq
 const int PWM_INCREMENT =1; //the rate pwm out can change per cycle
 const double ticksPerwheelRev = 254*2; //508.8; //not in use yet..just a reference for now
 const double wheelRadius = .03575; // 55.18;
@@ -44,7 +44,7 @@ const double VEL_MIN = 0.055;//0.0478;
 const double L_ENC_MULT = 1;
 const double L_MOTOR_COMP = 0.9;//.33;//1.33compensate for left motor being under powered
 const double L_MOTOR_COMP_REV = 1;//.37;//for reverse
-const double L_MOTOR_COMP_TURN = 0.9;//.1;
+const double L_MOTOR_COMP_TURN = 1;//.1;
 //left motor
 const int PWM_L = 21;
 const int MOTOR_L_FWD = 26;
