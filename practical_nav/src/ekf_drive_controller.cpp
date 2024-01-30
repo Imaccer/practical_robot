@@ -13,7 +13,8 @@
 *11/7/2019
 */
 
-
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Matrix3x3.h>
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -31,15 +32,38 @@ nav_msgs::Odometry odom;
 geometry_msgs::Twist cmdVel;
 geometry_msgs::PoseStamped desired;
 const double PI = 3.141592;
-const double Ka =0.35;//.05;// .35;
+const double Ka =0.05;//.05;// .35;
 const double Klv = .66;
 const double initialX = 5.0;
 const double initialY = 5.0;
-const double angularTolerance = .05;//.1;
+const double angularTolerance = .1;//.1;
 const double distanceTolerance = .03;//0.05
+const double finalHeadingTolerance = 0.03;
 const double MAX_LINEAR_VEL = 1;
 bool waypointActive = false;
 
+
+tf2::Quaternion createQuaternionFromPose(const geometry_msgs::Pose &pose){
+
+  tf2::Quaternion quaternion;
+
+  quaternion.setX(pose.orientation.x);
+  quaternion.setY(pose.orientation.y);
+  quaternion.setZ(pose.orientation.z);
+  quaternion.setW(pose.orientation.w);
+                
+  return quaternion;
+}
+
+/*
+double yawFromQuaternion(const tf2::Quaternion& quaternion) {
+    // Extract yaw angle from the quaternion
+    double roll, pitch, yaw;
+    tf2::Matrix3x3(quaternion).getRPY(roll, pitch, yaw);
+
+    return yaw;
+}
+*/
 
 //void update_pose(const nav_msgs::Odometry &currentOdom)
 void update_pose(const geometry_msgs::PoseWithCovarianceStamped &currentOdom)
@@ -48,8 +72,12 @@ void update_pose(const geometry_msgs::PoseWithCovarianceStamped &currentOdom)
 
     odom.pose.pose.position.x = currentOdom.pose.pose.position.x;
     odom.pose.pose.position.y = currentOdom.pose.pose.position.y;
+    odom.pose.pose.position.z = currentOdom.pose.pose.position.z;
+    odom.pose.pose.orientation.x = currentOdom.pose.pose.orientation.x;
+    odom.pose.pose.orientation.y = currentOdom.pose.pose.orientation.y;
     odom.pose.pose.orientation.z = currentOdom.pose.pose.orientation.z;
-    
+    odom.pose.pose.orientation.w = currentOdom.pose.pose.orientation.w;
+
     cout << "currentOdom msg header: " << currentOdom.header.frame_id << endl
          << "odom msg header: " << odom.header.frame_id << endl;
 
@@ -62,7 +90,11 @@ void update_goal(const geometry_msgs::PoseStamped &desiredPose)
 cout<<"got new goal!"<<endl;
     desired.pose.position.x = desiredPose.pose.position.x;
     desired.pose.position.y = desiredPose.pose.position.y;
+    desired.pose.position.z = desiredPose.pose.position.z;
+    desired.pose.orientation.x = desiredPose.pose.orientation.x;
+    desired.pose.orientation.y = desiredPose.pose.orientation.y;
     desired.pose.orientation.z = desiredPose.pose.orientation.z;
+    desired.pose.orientation.w = desiredPose.pose.orientation.w;
     waypointActive = true;
     cout<<"waypoint active set true"<<endl;
 }
@@ -80,7 +112,15 @@ double getAngularError()
     double deltaX = desired.pose.position.x - odom.pose.pose.position.x;
     double deltaY = desired.pose.position.y - odom.pose.pose.position.y;
     double thetaBearing = atan2(deltaY, deltaX);
-    double angularError = thetaBearing - odom.pose.pose.orientation.z;
+
+    tf2::Quaternion quat = createQuaternionFromPose(odom.pose.pose);
+    quat.normalize();
+    tf2::Matrix3x3 m(quat);
+    double roll, pitch, yaw;
+    m.getRPY(roll,pitch,yaw);   
+    double currentYaw = yaw;
+    //double angularError = thetaBearing - odom.pose.pose.orientation.z;
+    double angularError = thetaBearing - currentYaw; 
     angularError = (angularError > PI)  ? angularError - (2*PI) : angularError;
     angularError = (angularError < -PI) ? angularError + (2*PI) : angularError;
 cout<<"angular error within function call  = " <<angularError<<endl;
@@ -99,15 +139,23 @@ void set_velocity()
 
     static bool angle_met = true;
     static bool location_met = true;
-    double final_desired_heading_error = desired.pose.orientation.z - odom.pose.pose.orientation.z;
+
+    //double final_desired_heading_error = desired.pose.orientation.z - odom.pose.pose.orientation.z;
+    tf2::Quaternion desired_quat = createQuaternionFromPose(desired.pose);
+    desired_quat.normalize();
+
+    tf2::Quaternion current_quat = createQuaternionFromPose(odom.pose.pose);
+    current_quat.normalize();
+    
+    double final_desired_heading_error = tf2::angleShortestPath(desired_quat, current_quat);
 
     cout << "Final desired heading error = " << final_desired_heading_error << endl;
 
-    if(abs(getDistanceError()) >= .05)
+    if(abs(getDistanceError()) >=distanceTolerance)//0.05
         {
         location_met = false;
         }
-    else if (abs(getDistanceError()) < .03)
+    else if (abs(getDistanceError()) < distanceTolerance)//.03)
         {
         location_met = true;
         }
@@ -116,11 +164,11 @@ void set_velocity()
 
     cout << "Checking the ang error after conditional: " << angularError << endl;
 
-    if (abs(angularError) > .15)
+    if (abs(angularError) >= angularTolerance)//.15)
         {
          angle_met = false;
         }
-    else if (abs(angularError) < .1)
+    else if (abs(angularError) < angularTolerance)
         {
          angle_met = true;
         }
@@ -130,22 +178,27 @@ void set_velocity()
          cmdVel.angular.z = Ka * angularError;
          cmdVel.linear.x = 0;
         }
-    else if (waypointActive == true && abs(getDistanceError()) >= .05 && location_met == false)
+    else if (waypointActive == true && abs(getDistanceError()) >= distanceTolerance && location_met == false)
         {
          cmdVel.linear.x = Klv * getDistanceError();
          cmdVel.angular.z = 0;
         }
-    else
+    else 
     {
         cout << "********I'm HERE, now set final desired heading! **********"<<endl;
         location_met = true;
     }
 
-    if (location_met && abs(final_desired_heading_error) < .05)
+    if (location_met && (abs(final_desired_heading_error) <= finalHeadingTolerance))
         {
          cout<<"Target Achieved"<<endl;
          waypointActive = false;
         }
+    else if (location_met && waypointActive==true && abs(getDistanceError())<distanceTolerance && abs(final_desired_heading_error)>finalHeadingTolerance)   
+    {
+         cmdVel.angular.z = Ka * final_desired_heading_error ;
+         cmdVel.linear.x = 0;
+    }
 
     pubVelocity.publish(cmdVel);
     
@@ -180,8 +233,8 @@ int main(int argc, char **argv)
         }
         cout << "goal = " << desired.pose.position.x << ", " << desired.pose.position.y << endl
              << "current x,y = " << odom.pose.pose.position.x << ", " << odom.pose.pose.position.y << endl
-             << "  Distance error = " << getDistanceError() << endl;
-            // << "  Angular error = " << getAngularError() << endl;
+             << "  Distance error = " << getDistanceError() << endl
+             << "  Angular error = " << getAngularError() << endl;
         cout << "cmd_vel = " << cmdVel.linear.x <<" ,  "<<cmdVel.angular.z<< endl;
         loop_rate.sleep();
     }
