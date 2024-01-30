@@ -29,7 +29,7 @@ const double PI = 3.141592;
 const double ticksPerwheelRev = 508.8; //not in use. just a reference for now
 const double wheelRadius = .03575; // 55.18;
 const double WHEEL_BASE = .224; //223.8375mm actually
-const double TICKS_PER_M = 1125*2; //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645
+const double TICKS_PER_M = 2270;//1125*2; //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645
 
 double leftDistance = 0;
 double rightDistance = 0;

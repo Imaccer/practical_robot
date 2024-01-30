@@ -24,12 +24,12 @@
 #include <cstdlib>
 
 const int ENCODER_RANGE = 65535;//book says 65535...16 bit range
-const int LOOP_FREQ = 30;//must align with rqt steering cmd vel freq
+const int LOOP_FREQ = 50;//must align with rqt steering cmd vel freq
 const int PWM_INCREMENT =1; //the rate pwm out can change per cycle
 const double ticksPerwheelRev = 254*2; //508.8; //not in use yet..just a reference for now
 const double wheelRadius = .03575; // 55.18;
 const double wheelBase = .224; //223.8375mm actually
-const double TICKS_PER_M =1125*2;//or 2250 //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645 1125.766 t/m
+const double TICKS_PER_M =2270;//1125*2;//or 2250 //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645 1125.766 t/m
 const int KP = 20;//238 orginal
 const int DRIFT_MULTIPLIER =250;//125;// original//621
 const int TURN_PWM = 40;
@@ -42,9 +42,9 @@ const double VEL_MIN = 0.055;//0.0478;
 
 // left encoder multiplier
 const double L_ENC_MULT = 1;
-const double L_MOTOR_COMP = 1;//.33;//1.33compensate for left motor being under powered
+const double L_MOTOR_COMP = 0.9;//.33;//1.33compensate for left motor being under powered
 const double L_MOTOR_COMP_REV = 1;//.37;//for reverse
-const double L_MOTOR_COMP_TURN = 1;//.1;
+const double L_MOTOR_COMP_TURN = 0.9;//.1;
 //left motor
 const int PWM_L = 21;
 const int MOTOR_L_FWD = 26;
@@ -364,6 +364,13 @@ void set_pin_values()
     //limit output to a low of zero
     leftPwmOut = (leftPwmOut< 0 ) ? 0 : leftPwmOut;
     rightPwmOut = (rightPwmOut< 0) ? 0 : rightPwmOut;
+/*
+    if(leftPwmOut<leftPwmReq & rightPwmOut<rightPwmReq & leftPwmOut>=L_MOTOR_COMP*MIN_PWM)
+    {
+      //rightPwmOut = (1/L_MOTOR_COMP)*rightPwmOut;//when accelerating, balance pwm to account for left motor being stronger
+      leftPwmOut = L_MOTOR_COMP*leftPwmOut;
+    }
+*/
 
     //write the pwm values tot he pins
     set_PWM_dutycycle(pi, PWM_L, leftPwmOut);

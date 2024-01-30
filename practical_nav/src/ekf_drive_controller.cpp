@@ -35,8 +35,8 @@ const double Ka =0.35;//.05;// .35;
 const double Klv = .66;
 const double initialX = 5.0;
 const double initialY = 5.0;
-const double angularTolerance = .1;
-const double distanceTolerance = .05;
+const double angularTolerance = .05;//.1;
+const double distanceTolerance = .03;//0.05
 const double MAX_LINEAR_VEL = 1;
 bool waypointActive = false;
 
@@ -44,7 +44,7 @@ bool waypointActive = false;
 //void update_pose(const nav_msgs::Odometry &currentOdom)
 void update_pose(const geometry_msgs::PoseWithCovarianceStamped &currentOdom)
 {
-    odom.header.frame_id = currentOdom.header.frame_id;
+    //odom.header.frame_id = currentOdom.header.frame_id;
 
     odom.pose.pose.position.x = currentOdom.pose.pose.position.x;
     odom.pose.pose.position.y = currentOdom.pose.pose.position.y;
