@@ -149,8 +149,8 @@ void set_velocity()
     tf2::Quaternion current_quat = createQuaternionFromPose(odom.pose.pose);
     current_quat.normalize();
     
-    //double final_desired_heading_error = tf2::angleShortestPath(desired_quat, current_quat);
-    double final_desired_heading_error = tf2::angleShortestPath(current_quat, desired_quat);
+    double final_desired_heading_error = tf2::angleShortestPath(desired_quat, current_quat);
+    //double final_desired_heading_error = tf2::angleShortestPath(current_quat, desired_quat);
 //    final_desired_heading_error = (final_desired_heading_error > PI)  ? final_desired_heading_error - (2*PI) : final_desired_heading_error ;
 //    final_desired_heading_error = (final_desired_heading_error < -PI) ?final_desired_heading_error  + (2*PI) : final_desired_heading_error ;
 
@@ -219,14 +219,29 @@ void set_velocity()
          cout<<"Target Achieved"<<endl;
 
          angle_met = true;
+
+
+         cmdVel.angular.z= 0.0;
+         cmdVel.linear.x = 0.0;
          waypointActive = false;
         
         }
     //else if (location_met==true && waypointActive==true && abs(angularError)>finalHeadingTolerance)   
     else if (waypointActive==true && location_met==true && abs(angularError)>finalHeadingTolerance)   
     {
+     /*if (angularError > PI)
+     {   
+      cmdVel.angular.z = -0.25 * Ka * (2 * PI - final_desired_heading_error);
+     }*/
          cout << "Final angle correction: "<< angularError << endl;
-         cmdVel.angular.z = 0.25* Ka * angularError;
+         if (angularError>0)
+         {
+           cmdVel.angular.z = -0.25 * Ka * angularError;
+         }
+         else
+         {
+           cmdVel.angular.z = 0.25* Ka * angularError;
+         }
          cmdVel.linear.x = 0;
          if (abs(cmdVel.angular.z) <= ANG_VEL_MIN && cmdVel.angular.z>0)
          {
