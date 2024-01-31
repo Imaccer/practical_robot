@@ -272,7 +272,7 @@ int main(int argc, char **argv)
     ros::Subscriber subDesiredPose = node.subscribe("waypoint_2d", 1, update_goal, ros::TransportHints().tcpNoDelay());
     pubVelocity = node.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 
-    ros::Rate loop_rate(50);
+    ros::Rate loop_rate(10);
     while (ros::ok())
     {
         ros::spinOnce();

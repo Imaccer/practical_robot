@@ -24,7 +24,7 @@
 #include <cstdlib>
 
 const int ENCODER_RANGE = 65535;//book says 65535...16 bit range
-const int LOOP_FREQ = 90;//must align with rqt steering cmd vel freq
+const int LOOP_FREQ = 100;//must align with rqt steering cmd vel freq
 const int PWM_INCREMENT =1; //the rate pwm out can change per cycle
 const double ticksPerwheelRev = 254*2; //508.8; //not in use yet..just a reference for now
 const double wheelRadius = .03575; // 55.18;
@@ -32,9 +32,9 @@ const double wheelBase = .224; //223.8375mm actually
 const double TICKS_PER_M =2270;//1125*2;//or 2250 //1.1645; //1.365 is on hard floor. carpet avg is 1.1926. overall avg = 1.1645 1125.766 t/m
 const int KP = 20;//238 orginal
 const int DRIFT_MULTIPLIER =250;//125;// original//621
-const int TURN_PWM = 40;
+const int TURN_PWM = 34;
 const int MAX_TURN_PWM = 85;
-const int MIN_PWM = 30;
+const int MIN_PWM = 25;
 const int MAX_PWM = 90;// original 120
 const double VEL_MIN = 0.055;//0.0478;
 //const double ANG_MIN = 0.02;
