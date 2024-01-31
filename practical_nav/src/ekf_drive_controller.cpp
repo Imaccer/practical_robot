@@ -39,7 +39,7 @@ const double initialX = 5.0;
 const double initialY = 5.0;
 const double angularTolerance = .15;//.1;
 const double distanceTolerance = .05;//0.05
-const double finalHeadingTolerance = 0.1;
+const double finalHeadingTolerance = 0.10;
 const double MAX_LINEAR_VEL = 1;
 bool waypointActive = false;
 const double VEL_MIN = 0.06;//0.055;//make sure same as SDD
@@ -121,6 +121,7 @@ double getAngularError()
     double roll, pitch, yaw;
     m.getRPY(roll,pitch,yaw);   
     double currentYaw = yaw;
+    cout << "currentYaw = " << currentYaw << endl;
     //double angularError = thetaBearing - odom.pose.pose.orientation.z;
     double angularError = thetaBearing - currentYaw; 
     angularError = (angularError > PI)  ? angularError - (2*PI) : angularError;
@@ -236,11 +237,11 @@ void set_velocity()
          cout << "Final angle correction: "<< angularError << endl;
          if (angularError>0)
          {
-           cmdVel.angular.z = -0.25 * Ka * angularError;
+           cmdVel.angular.z = -0.01 * Ka * angularError;
          }
          else
          {
-           cmdVel.angular.z = 0.25* Ka * angularError;
+           cmdVel.angular.z = 0.01* Ka * angularError;
          }
          cmdVel.linear.x = 0;
          if (abs(cmdVel.angular.z) <= ANG_VEL_MIN && cmdVel.angular.z>0)

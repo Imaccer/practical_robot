@@ -23,7 +23,8 @@ ros::Publisher pub3;
 
 void pub_msg(float x, float y, float yaw, int choice)
 {
-    geometry_msgs::PoseWithCovarianceStamped pose;
+    //geometry_msgs::PoseWithCovarianceStamped pose;
+    geometry_msgs::PoseStamped pose;
     geometry_msgs::PoseStamped goal;
     geometry_msgs::PoseStamped rpy;
     
@@ -43,8 +44,9 @@ void pub_msg(float x, float y, float yaw, int choice)
     {
         pose.header.frame_id = "map";
         pose.header.stamp = ros::Time::now();
-        pose.pose.pose = rpy.pose;
-        pub2.publish(rpy);
+        //pose.pose.pose = rpy.pose;
+        pose.pose= rpy.pose;
+        pub2.publish(pose);
     }
     else //publish a goal
     {
@@ -59,7 +61,8 @@ void pub_msg(float x, float y, float yaw, int choice)
 
     if(choice == 1) //publish a pose
     {
-        pose.pose.pose = rpy.pose;
+        //pose.pose.pose = rpy.pose;
+        pose.pose= rpy.pose;
         pub3.publish(pose);
     }
     else //publish a goal
@@ -78,7 +81,8 @@ int main(int argc, char **argv)
     pub = node.advertise<geometry_msgs::PoseStamped>("goal_2d", 10);
     pub1 = node.advertise<geometry_msgs::PoseStamped>("move_base_simple/goal", 10);
     pub2 = node.advertise<geometry_msgs::PoseStamped>("initial_2d", 10);
-    pub3 = node.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 10);
+    //pub3 = node.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 10);
+    pub3 = node.advertise<geometry_msgs::PoseStamped>("initialpose", 10);
 
     while (ros::ok())
     {
