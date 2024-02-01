@@ -9,7 +9,7 @@
 *11/7/2019
 */
 #include "ros/ros.h"
-#include "practical_nav/practical_common.h"
+#include "practical_nav/path_planner.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "nav_msgs/Path.h"
 #include <tf/transform_listener.h>

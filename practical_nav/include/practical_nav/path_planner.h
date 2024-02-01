@@ -1,5 +1,5 @@
-#ifndef PRACTICAL_COMMON_H_
-#define PRACTICAL_COMMON_H_
+#ifndef PRACTICAL_NAV_H_
+#define PRACTICAL_NAV_H_
 #include "nav_msgs/OccupancyGrid.h"
 #include <math.h>
 #include<iostream>
