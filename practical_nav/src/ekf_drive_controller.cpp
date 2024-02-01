@@ -54,6 +54,7 @@ tf2::Quaternion createQuaternionFromPose(const geometry_msgs::Pose &pose){
   quaternion.setZ(pose.orientation.z);
   quaternion.setW(pose.orientation.w);
                 
+  quaternion.normalize();
   return quaternion;
 }
 

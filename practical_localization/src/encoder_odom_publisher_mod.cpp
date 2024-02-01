@@ -42,22 +42,7 @@ using namespace std;
 //at at least one is required to start this node publishing
 void setInitialPose(const geometry_msgs::PoseStamped &rvizClick)
 {
-  oldOdom.pose.pose.position.x = rvizClick.pose.position.x;
-  oldOdom.pose.pose.position.y = rvizClick.pose.position.y;
-  oldOdom.pose.pose.position.z = rvizClick.pose.position.z;
-
-  // Normalize the orientation quaternion
-  tf2::Quaternion q(rvizClick.pose.orientation.x,rvizClick.pose.orientation.y,rvizClick.pose.orientation.z,rvizClick.pose.orientation.w);
-
-  q.normalize();
-
-  oldOdom.pose.pose.orientation.x= q.x();
-  oldOdom.pose.pose.orientation.y= q.y();
-  oldOdom.pose.pose.orientation.z= q.z();
-  oldOdom.pose.pose.orientation.w= q.w();
-                 
-  initialPoseRecieved= true;
-  /*
+     oldOdom.pose.pose.position.x = rvizClick.pose.position.x;
      oldOdom.pose.pose.position.y = rvizClick.pose.position.y;
      oldOdom.pose.pose.position.z = rvizClick.pose.position.z;
      oldOdom.pose.pose.orientation.x = rvizClick.pose.orientation.x;
@@ -65,7 +50,6 @@ void setInitialPose(const geometry_msgs::PoseStamped &rvizClick)
      oldOdom.pose.pose.orientation.z = rvizClick.pose.orientation.z;
      oldOdom.pose.pose.orientation.w = rvizClick.pose.orientation.w;
      initialPoseRecieved = true;
-*/
 }
 
 //calculate distance left wheel has traveled since last cycle
@@ -114,23 +98,9 @@ static int lastCountR = 0;
 //for a specific robot before it is used.
 void publish_quat()
 {
-  /*  tf2::Quaternion q(
-        newOdom.pose.pose.orientation.x,
-        newOdom.pose.pose.orientation.y,
-        newOdom.pose.pose.orientation.z,
-        newOdom.pose.pose.orientation.w
-        );
+    //tf2::Quaternion q;
     //q.setRPY(0, 0, newOdom.pose.pose.orientation.z);
-    
-    
-    if (!std::isnan(q.x()) && !std::isnan(q.y()) && !std::isnan(q.z()) && !std::isnan(q.w())) {
-          q.normalize();
-    }
-    */
-    tf2::Quaternion q;
-    q.setRPY(0,0,newOdom.pose.pose.orientation.z);
-    q.normalize();
-
+    //q.normalize();
     nav_msgs::Odometry quatOdom;
     quatOdom.header.stamp = newOdom.header.stamp;
     quatOdom.header.frame_id = "odom";
@@ -138,21 +108,20 @@ void publish_quat()
     quatOdom.pose.pose.position.x = newOdom.pose.pose.position.x;
     quatOdom.pose.pose.position.y = newOdom.pose.pose.position.y;
     quatOdom.pose.pose.position.z = newOdom.pose.pose.position.z;
-    quatOdom.pose.pose.orientation.x = q.x();
+    /*quatOdom.pose.pose.orientation.x = q.x();
     quatOdom.pose.pose.orientation.y = q.y();
     quatOdom.pose.pose.orientation.z = q.z();
-    quatOdom.pose.pose.orientation.w = q.w();
-/*    quatOdom.pose.pose.orientation.x = newOdom.pose.pose.orientation.x; 
+    quatOdom.pose.pose.orientation.w = q.w();*/
+    quatOdom.pose.pose.orientation.x = newOdom.pose.pose.orientation.x; 
     quatOdom.pose.pose.orientation.y = newOdom.pose.pose.orientation.y;
     quatOdom.pose.pose.orientation.z = newOdom.pose.pose.orientation.z;
-    quatOdom.pose.pose.orientation.w = newOdom.pose.pose.orientation.w;*/
+    quatOdom.pose.pose.orientation.w = newOdom.pose.pose.orientation.w;
     quatOdom.twist.twist.linear.x = newOdom.twist.twist.linear.x;
     quatOdom.twist.twist.linear.y = newOdom.twist.twist.linear.y;
     quatOdom.twist.twist.linear.z = newOdom.twist.twist.linear.z;
     quatOdom.twist.twist.angular.x = newOdom.twist.twist.angular.x;
     quatOdom.twist.twist.angular.y = newOdom.twist.twist.angular.y;
     quatOdom.twist.twist.angular.z = newOdom.twist.twist.angular.z;
-
 
     for(int i = 0; i<36; i++)
     {

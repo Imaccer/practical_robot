@@ -31,6 +31,7 @@ void pub_msg(float x, float y, float yaw, int choice)
 
     tf2::Quaternion q;
     q.setRPY(0, 0, yaw);
+//    q.normalize();
     rpy.pose.orientation.x = q.x();
     rpy.pose.orientation.y = q.y();
     rpy.pose.orientation.z = q.z();
