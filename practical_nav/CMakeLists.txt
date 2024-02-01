@@ -219,3 +219,6 @@ target_link_libraries(simple_drive_controller ${catkin_LIBRARIES})
 
 add_executable(ekf_drive_controller src/ekf_drive_controller.cpp)
 target_link_libraries(ekf_drive_controller ${catkin_LIBRARIES})
+
+#add_executable(path_planner src/path_planner.cpp)
+#target_link_libraries(path_planner ${catkin_LIBRARIES})

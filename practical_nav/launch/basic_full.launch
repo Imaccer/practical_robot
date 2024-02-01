@@ -70,4 +70,13 @@ name="manual_pose_and_goal_pub" output="screen"/>
 <node pkg="joy_teleop" type="joy_teleop.py" name="joy_teleop">
 </node>
 
+<rosparam file="$(find practical_nav)/params/costmap_basic.yaml" command="load"
+ns="/costmap_2d/costmap" />
+<node pkg="costmap_2d" type="costmap_2d_node" name="costmap_2d" output="screen"
+/>
+
+<node pkg="practical_nav" type="path_planner" name="path_planner"
+output="screen" >
+<remap from="costmap" to="costmap_2d/costmap/costmap" />
+
 </launch>
