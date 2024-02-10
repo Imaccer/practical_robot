@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES practical_sensors
-  CATKIN_DEPENDS roscpp sensor_msgs std_msgs
+  CATKIN_DEPENDS roscpp sensor_msgs std_msgs 
 #  DEPENDS system_lib
 )
 
@@ -21,11 +21,17 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+if(CATKIN_ENABLE_TESTING) 
+ catkin_add_gtest(gtest_test test/gtest.cpp) 
+ target_link_libraries(gtest_test ${catkin_LIBRARIES}) 
+endif() 
+
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_practical_sensors.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
+#catkin_add_gtest(${PROJECT_NAME}-test test/test_practical_sensors.cpp)
+#catkin_add_gtest(${PROJECT_NAME}-test test/gtest.cpp)
+#if(TARGET ${PROJECT_NAME}-test)
+# target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+#endif()
 
 INCLUDE_DIRECTORIES(/usr/local/lib)
 LINK_DIRECTORIES(/usr/local/lib)
