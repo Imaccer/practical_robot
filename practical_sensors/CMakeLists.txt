@@ -7,12 +7,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
+  rostest
 )
 
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES practical_sensors
-  CATKIN_DEPENDS roscpp sensor_msgs std_msgs 
+  CATKIN_DEPENDS roscpp sensor_msgs std_msgs rostest
 #  DEPENDS system_lib
 )
 
@@ -24,6 +25,9 @@ include_directories(
 if(CATKIN_ENABLE_TESTING) 
  catkin_add_gtest(gtest_test test/gtest.cpp) 
  target_link_libraries(gtest_test ${catkin_LIBRARIES}) 
+ add_rostest_gtest(encoder_test test/ros_gtest.test test/ros_gtest.cpp)
+ target_link_libraries(encoder_test ${catkin_LIBRARIES} encoder
+   libpigpiod_if2.so)
 endif() 
 
 ## Add gtest based cpp test target and link libraries
