@@ -1,0 +1,4 @@
+<launch>
+ <test test-name="encoder_test_full" pkg="practical_sensors"
+type="encoder_test_full" />
+</launch>

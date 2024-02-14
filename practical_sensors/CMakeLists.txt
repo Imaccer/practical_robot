@@ -23,11 +23,15 @@ include_directories(
 )
 
 if(CATKIN_ENABLE_TESTING) 
- catkin_add_gtest(gtest_test test/gtest.cpp) 
- target_link_libraries(gtest_test ${catkin_LIBRARIES}) 
- add_rostest_gtest(encoder_test test/ros_gtest.test test/ros_gtest.cpp)
- target_link_libraries(encoder_test ${catkin_LIBRARIES} encoder
+  catkin_add_gtest(gtest_test test/gtest.cpp) 
+  target_link_libraries(gtest_test ${catkin_LIBRARIES}) 
+  add_rostest_gtest(encoder_test test/ros_gtest.test test/ros_gtest.cpp)
+  target_link_libraries(encoder_test ${catkin_LIBRARIES} encoder
    libpigpiod_if2.so)
+  add_rostest_gtest(encoder_test_full test/ros_gtest_full.test
+   test/ros_gtest_full.cpp)
+  target_link_libraries(encoder_test_full ${catkin_LIBRARIES} encoder
+   libpigpiod_if2.so gmock)
 endif() 
 
 ## Add gtest based cpp test target and link libraries
@@ -45,7 +49,7 @@ target_link_libraries(tick_publisher libpigpiod_if2.so ${catkin_LIBRARIES})
 
 add_library(encoder src/encoder.cpp) 
 add_dependencies(encoder ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}) 
-target_link_libraries(encoder ${catkin_LIBRARIES}) 
+target_link_libraries(encoder libpigpiod_if2.so ${catkin_LIBRARIES}) 
 
 add_executable(encoder_node nodes/encoder_node.cpp) 
 add_dependencies(encoder_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}) 

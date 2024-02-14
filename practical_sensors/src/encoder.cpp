@@ -25,6 +25,12 @@ Encoder::~Encoder() {
   callback_cancel(callbackId_);
 }
 
+void Encoder::setPublisher(const ros::Publisher& publisher) {pub_ = publisher;};
+
+void Encoder::setPigpiodIf2(MockPigpiodIf2* mockPigpiodIf2) {
+  pigpiodIf2 = mockPigpiodIf2;
+}
+
 bool Encoder::isInitialized() const { return (this != nullptr); }
 
 void Encoder::setupCallback() {

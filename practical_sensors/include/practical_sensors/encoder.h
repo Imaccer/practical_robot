@@ -5,20 +5,9 @@
 #include <std_msgs/Int16.h>
 #include <string>
 
+class MockPigpiodIf2;
+
 class Encoder {
- public:
-  Encoder(ros::NodeHandle&, int pi, unsigned int encoderPin,
-          unsigned int reversePin, const std::string& wheelName);
-  ~Encoder();
-
-  void setupCallback();
-  void eventCallback(int pi, unsigned int gpio, unsigned int edge,
-                     unsigned int tick, void* userdata);
-  void publishCount();
-  bool isInitialized() const;
-  static void eventCallbackWrapper(int pi, unsigned int gpio, unsigned int edge,
-                                   unsigned int tick, void* userdata);
-
  private:
   unsigned int encoderPin_;
   int callbackId_;
@@ -33,5 +22,23 @@ class Encoder {
 
   ros::Publisher pub_;
   ros::NodeHandle nh_;
+
+  MockPigpiodIf2* pigpiodIf2;
+
+ public:
+  Encoder(ros::NodeHandle&, int pi, unsigned int encoderPin,
+          unsigned int reversePin, const std::string& wheelName);
+  ~Encoder();
+
+  void setupCallback();
+  void eventCallback(int pi, unsigned int gpio, unsigned int edge,
+                     unsigned int tick, void* userdata);
+  void publishCount();
+  bool isInitialized() const;
+  static void eventCallbackWrapper(int pi, unsigned int gpio, unsigned int edge,
+                                   unsigned int tick, void* userdata);
+  void setPublisher(const ros::Publisher& publisher);
+  void setPigpiodIf2(MockPigpiodIf2* mockPigpiodIf2);
+
 };
 #endif  // PRACTICAL_SENSORS_INCLUDE_PRACTICAL_SENSORS_ENCODER_H_
