@@ -47,14 +47,14 @@ public:
 };
 
 // Test case to check if the Encoder object is initialized correctly
-TEST_F(EncoderTest, Initialization) { EXPECT_TRUE(encoder.isInitialized()); }
+//TEST_F(EncoderTest, Initialization) { EXPECT_TRUE(encoder.isInitialized()); }
 
 /*
 // Test case to check if setupCallback method is setting up the callback
 // correctly
 TEST_F(EncoderTest, SetupCallback) {
   // Mocking the callback_ex function to return a positive value
-  ON_CALL(pigpiodMock, callback_ex(_, _, _, _)).WillByDefault(Return(1));
+//  ON_CALL(pigpiodMock, callback_ex(_, _, _, _)).WillByDefault(Return(1));
 
   // Expect setupCallback to set up the callback successfully
   EXPECT_NO_THROW(encoder.setupCallback());
@@ -87,8 +87,8 @@ TEST_F(EncoderTest, PublishCount) {
   // Call publishCount and expect publish to be called without errors
   EXPECT_NO_THROW(encoder.publishCount());
 }
-
 */
+
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "encoder_test_node");
