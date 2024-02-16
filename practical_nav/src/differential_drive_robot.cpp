@@ -21,10 +21,7 @@ DifferentialDriveRobot::DifferentialDriveRobot(ros::NodeHandle& nh)
       MIN_PWM_(25),
       MAX_PWM_(90),
       VEL_MIN_(0.055),
-      L_ENC_MULT_(1),
       L_MOTOR_COMP_(0.9),
-      L_MOTOR_COMP_REV_(1),
-      L_MOTOR_COMP_TURN_(1),
       PWM_L_(21),
       MOTOR_L_FWD_(26),
       MOTOR_L_REV_(13),
@@ -139,10 +136,10 @@ void DifferentialDriveRobot::setSpeeds(const geometry_msgs::Twist& cmdVel) {
 
   if (abs(cmdVel.angular.z) > 0.01) {
     if (cmdVel.angular.z >= .01) {
-      leftPwmReq_ = -L_MOTOR_COMP_TURN_ * TURN_PWM_;
+      leftPwmReq_ = -TURN_PWM_;
       rightPwmReq_ = (1.0 / L_MOTOR_COMP_) * TURN_PWM_;
     } else if (cmdVel.angular.z < -.01) {
-      leftPwmReq_ = L_MOTOR_COMP_TURN_ * TURN_PWM_;
+      leftPwmReq_ = TURN_PWM_;
       rightPwmReq_ = -(1.0 / L_MOTOR_COMP_) * TURN_PWM_;
     }
 
@@ -176,8 +173,8 @@ void DifferentialDriveRobot::setSpeeds(const geometry_msgs::Twist& cmdVel) {
       leftPwmReq_ = KP_ * L_MOTOR_COMP_ * cmdVel.linear.x + b;
       rightPwmReq_ = KP_ * (1.0 / L_MOTOR_COMP_) * cmdVel.linear.x + b;
     } else if (cmdVel.linear.x < 0) {
-      leftPwmReq_ = KP_ * L_MOTOR_COMP_REV_ * cmdVel.linear.x - b;
-      rightPwmReq_ = KP_ * (1.0 / L_MOTOR_COMP_REV_) * cmdVel.linear.x - b;
+      leftPwmReq_ = KP_ * cmdVel.linear.x - b;
+      rightPwmReq_ = KP_ * cmdVel.linear.x - b;
     }
 
     static double prevDiff = 0;

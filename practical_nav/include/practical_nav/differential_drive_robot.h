@@ -40,10 +40,7 @@ class DifferentialDriveRobot {
   const int MIN_PWM_;
   const int MAX_PWM_;        
   const double VEL_MIN_; 
-  const double L_ENC_MULT_;
   const double L_MOTOR_COMP_;  
-  const double L_MOTOR_COMP_REV_;
-  const double L_MOTOR_COMP_TURN_;
   const int PWM_L_;
   const int MOTOR_L_FWD_;
   const int MOTOR_L_REV_; 
