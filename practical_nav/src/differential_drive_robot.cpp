@@ -17,7 +17,7 @@ DifferentialDriveRobot::DifferentialDriveRobot(ros::NodeHandle& nh)
       KP_(20),
       DRIFT_MULTIPLIER_(250),
       TURN_PWM_(34),
-      MAX_TURN_PWM_(85),
+      MAX_TURN_PWM_(55),
       MIN_PWM_(25),
       MAX_PWM_(90),
       VEL_MIN_(0.055),
@@ -39,7 +39,7 @@ DifferentialDriveRobot::DifferentialDriveRobot(ros::NodeHandle& nh)
       rightPwmReq_(0),
       lastCmdMsgRcvd_(0),
       pi_(-1) {
-  pigpioSetup();
+  pi_ = pigpioSetup();
   createSubscribers();
 }
 
@@ -298,6 +298,11 @@ void DifferentialDriveRobot::setPinValues() {
   // cap output at max defined in constants
   leftPwmOut = (leftPwmOut > MAX_PWM_) ? MAX_PWM_ : leftPwmOut;
   rightPwmOut = (rightPwmOut > MAX_PWM_) ? MAX_PWM_ : rightPwmOut;
+
+  if ((leftPwmReq_ < 0) || (rightPwmReq_ < 0)) {
+  leftPwmOut = (leftPwmOut > MAX_TURN_PWM_) ? MAX_TURN_PWM_ : leftPwmOut;
+  rightPwmOut = (rightPwmOut > MAX_TURN_PWM_) ? MAX_TURN_PWM_ : rightPwmOut;
+  }
 
   if ((leftPwmOut < 0) || (rightPwmOut < 0)) {
     cout << "PwmOut values -ve" << endl;
