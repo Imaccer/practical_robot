@@ -19,7 +19,7 @@ class DifferentialDriveRobot {
   void createSubscribers();
   void calculateLeftVelocity(const std_msgs::Int16& leftCount);
   void calculateRightVelocity(const std_msgs::Int16& rightCount);
-  void setSpeeds(const geometry_msgs::Twist& cmdVel);
+  void setSpeeds(const geometry_msgs::Twist& cmdVelocity);
   void setPinValues();
 
   ros::NodeHandle nh_;
@@ -33,12 +33,13 @@ class DifferentialDriveRobot {
   const double WHEEL_RADIUS_;
   const double WHEELBASE_;
   const double TICKS_PER_M_;
-  const int KP_;              
+  const int CONTROL_KP_;              
   const int DRIFT_MULTIPLIER_;
   const int TURN_PWM_;
   const int MAX_TURN_PWM_;
   const int MIN_PWM_;
   const int MAX_PWM_;        
+  const double ANGULAR_VELOCITY_MIN_;
   const double LINEAR_VELOCITY_MIN_; 
   const double LEFT_MOTOR_COMPENSATION_;  
   const int LEFT_PWM_PIN_;
@@ -52,8 +53,8 @@ class DifferentialDriveRobot {
 
   double leftVelocity_;
   double rightVelocity_;
-  double leftPwmReq_;
-  double rightPwmReq_;
+  double leftPwmRequired_;
+  double rightPwmRequired_;
   double lastCmdMsgRcvd_;
   int pi_;
 };
