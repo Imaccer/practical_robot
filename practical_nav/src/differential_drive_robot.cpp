@@ -49,7 +49,7 @@ int DifferentialDriveRobot::pigpioSetup() {
   char* addrStr = NULL;
   char* portStr = NULL;
   int pi_ = pigpio_start(addrStr, portStr);
-  
+
   // drive in1 or in2 low to start the output to motor
   set_mode(pi_, LEFT_PWM_PIN_, PI_OUTPUT);
   set_mode(pi_, LEFT_MOTOR_FWD_PIN_, PI_OUTPUT);
@@ -129,8 +129,10 @@ void DifferentialDriveRobot::calculateRightVelocity(
 
 void DifferentialDriveRobot::setSpeeds(const geometry_msgs::Twist& cmdVel) {
   lastCmdMsgRcvd_ = ros::Time::now().toSec();
-  int b = (abs(cmdVel.linear.x) > LINEAR_VELOCITY_MIN_ && abs(cmdVel.linear.x) < .082) ? 30
-                                                                           : 40;
+  int b = (abs(cmdVel.linear.x) > LINEAR_VELOCITY_MIN_ &&
+           abs(cmdVel.linear.x) < .082)
+              ? 30
+              : 40;
   double cmdVelEpsilon = 0.01;
   double cmdAngVelEpsilon = 0.001;
 
@@ -142,36 +144,14 @@ void DifferentialDriveRobot::setSpeeds(const geometry_msgs::Twist& cmdVel) {
       leftPwmReq_ = TURN_PWM_;
       rightPwmReq_ = -(1.0 / LEFT_MOTOR_COMPENSATION_) * TURN_PWM_;
     }
-
-    static double prevRotDiff = 0;
-    static double prevPrevRotDiff = 0;
-    static double prevAvgAngularRotDiff = 0;
-    double angularVelRotDifference =
-        leftVelocity_ +
-        rightVelocity_;  // how much faster one wheel is actually turning
-    double avgAngularRotDiff =
-        (prevRotDiff + prevPrevRotDiff + angularVelRotDifference) /
-        3;  // average several cycles
-    prevPrevRotDiff = prevRotDiff;
-    prevRotDiff = angularVelRotDifference;
-
-    if (abs(avgAngularRotDiff) > cmdAngVelEpsilon) {
-      leftPwmReq_ -= (int)(avgAngularRotDiff * DRIFT_MULTIPLIER_);
-      rightPwmReq_ -= (int)(avgAngularRotDiff * DRIFT_MULTIPLIER_);
-
-      prevAvgAngularRotDiff = avgAngularRotDiff;
-
-    } else if (abs(avgAngularRotDiff) <= cmdAngVelEpsilon) {
-      leftPwmReq_ -= (int)(prevAvgAngularRotDiff * DRIFT_MULTIPLIER_);
-      rightPwmReq_ -= (int)(prevAvgAngularRotDiff * DRIFT_MULTIPLIER_);
-    }
   } else if (abs(cmdVel.linear.x) <= LINEAR_VELOCITY_MIN_) {
     leftPwmReq_ = 0;
     rightPwmReq_ = 0;
   } else if (abs(cmdVel.linear.x) > LINEAR_VELOCITY_MIN_) {
     if (cmdVel.linear.x > 0) {
       leftPwmReq_ = KP_ * LEFT_MOTOR_COMPENSATION_ * cmdVel.linear.x + b;
-      rightPwmReq_ = KP_ * (1.0 / LEFT_MOTOR_COMPENSATION_) * cmdVel.linear.x + b;
+      rightPwmReq_ =
+          KP_ * (1.0 / LEFT_MOTOR_COMPENSATION_) * cmdVel.linear.x + b;
     } else if (cmdVel.linear.x < 0) {
       leftPwmReq_ = KP_ * cmdVel.linear.x - b;
       rightPwmReq_ = KP_ * cmdVel.linear.x - b;
