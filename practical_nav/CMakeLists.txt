@@ -52,9 +52,6 @@ add_dependencies(path_planner_node ${${PROJECT_NAME}_EXPORTED_TARGETS}
 ${catkin_EXPORTED_TARGETS}) 
 target_link_libraries(path_planner_node ${catkin_LIBRARIES} path_planner)
 
-add_executable(simple_diff_drive src/simple_diff_drive.cpp)
-target_link_libraries(simple_diff_drive libpigpiod_if2.so ${catkin_LIBRARIES})
-
 add_library(differential_drive_robot src/differential_drive_robot.cpp) 
 add_dependencies(differential_drive_robot ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}) 
 target_link_libraries(differential_drive_robot libpigpiod_if2.so ${catkin_LIBRARIES}) 

@@ -44,9 +44,6 @@ endif()
 INCLUDE_DIRECTORIES(/usr/local/lib)
 LINK_DIRECTORIES(/usr/local/lib)
 
-add_executable(tick_publisher src/tick_publisher.cpp)
-target_link_libraries(tick_publisher libpigpiod_if2.so ${catkin_LIBRARIES})
-
 add_library(encoder src/encoder.cpp) 
 add_dependencies(encoder ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}) 
 target_link_libraries(encoder libpigpiod_if2.so ${catkin_LIBRARIES}) 
