@@ -24,8 +24,8 @@ class DifferentialDriveRobot {
 
   ros::NodeHandle nh_;
   ros::Rate loopRate_;
-  ros::Subscriber subForRightCounts_;
-  ros::Subscriber subForLeftCounts_;
+  ros::Subscriber subForRightWheelTicks_;
+  ros::Subscriber subForLeftWheelTicks_;
   ros::Subscriber subForVelocity_;
 
   const int ENCODER_RANGE_;
@@ -40,13 +40,13 @@ class DifferentialDriveRobot {
   const int MIN_PWM_;
   const int MAX_PWM_;        
   const double LINEAR_VELOCITY_MIN_; 
-  const double L_MOTOR_COMP_;  
-  const int PWM_L_;
-  const int MOTOR_L_FWD_;
-  const int MOTOR_L_REV_; 
-  const int PWM_R_;
-  const int MOTOR_R_FWD_;
-  const int MOTOR_R_REV_;
+  const double LEFT_MOTOR_COMPENSATION_;  
+  const int LEFT_PWM_PIN_;
+  const int LEFT_MOTOR_FWD_PIN_;
+  const int LEFT_MOTOR_REV_PIN_; 
+  const int RIGHT_PWM_PIN_;
+  const int RIGHT_MOTOR_FWD_PIN_;
+  const int RIGHT_MOTOR_REV_PIN_;
   const int LEFT_PWM_FREQ_;
   const int RIGHT_PWM_FREQ_;
 

@@ -18,13 +18,13 @@ DifferentialDriveRobot::DifferentialDriveRobot(ros::NodeHandle& nh)
       MIN_PWM_(25),
       MAX_PWM_(90),
       LINEAR_VELOCITY_MIN_(0.055),
-      L_MOTOR_COMP_(0.9),
-      PWM_L_(21),
-      MOTOR_L_FWD_(26),
-      MOTOR_L_REV_(13),
-      PWM_R_(19),
-      MOTOR_R_FWD_(12),
-      MOTOR_R_REV_(20),
+      LEFT_MOTOR_COMPENSATION_(0.9),
+      LEFT_PWM_PIN_(21),
+      LEFT_MOTOR_FWD_PIN_(26),
+      LEFT_MOTOR_REV_PIN_(13),
+      RIGHT_PWM_PIN_(19),
+      RIGHT_MOTOR_FWD_PIN_(12),
+      RIGHT_MOTOR_REV_PIN_(20),
       LEFT_PWM_FREQ_(100),
       RIGHT_PWM_FREQ_(100),
       leftVelocity_(0),
@@ -38,39 +38,42 @@ DifferentialDriveRobot::DifferentialDriveRobot(ros::NodeHandle& nh)
 }
 
 DifferentialDriveRobot::~DifferentialDriveRobot() {
-  gpio_write(pi_, MOTOR_L_FWD_, 1);
-  gpio_write(pi_, MOTOR_L_REV_, 1);
-  gpio_write(pi_, MOTOR_R_FWD_, 1);
-  gpio_write(pi_, MOTOR_R_REV_, 1);
+  //  Ensure motors are in OFF state
+  gpio_write(pi_, LEFT_MOTOR_FWD_PIN_, 1);
+  gpio_write(pi_, LEFT_MOTOR_REV_PIN_, 1);
+  gpio_write(pi_, RIGHT_MOTOR_FWD_PIN_, 1);
+  gpio_write(pi_, RIGHT_MOTOR_REV_PIN_, 1);
 }
 
 int DifferentialDriveRobot::pigpioSetup() {
   char* addrStr = NULL;
   char* portStr = NULL;
   int pi_ = pigpio_start(addrStr, portStr);
-  // next 10 lines sets up our pins. Remember that high is "off"
-  // and we must drive in1 or in2 low to start the output to motor
-  set_mode(pi_, PWM_L_, PI_OUTPUT);
-  set_mode(pi_, MOTOR_L_FWD_, PI_OUTPUT);
-  set_mode(pi_, MOTOR_L_REV_, PI_OUTPUT);
-  set_mode(pi_, PWM_R_, PI_OUTPUT);
-  set_mode(pi_, MOTOR_R_FWD_, PI_OUTPUT);
-  set_mode(pi_, MOTOR_R_REV_, PI_OUTPUT);
-  int setRightPwmFreq = set_PWM_frequency(pi_, PWM_R_, RIGHT_PWM_FREQ_);
+  
+  // drive in1 or in2 low to start the output to motor
+  set_mode(pi_, LEFT_PWM_PIN_, PI_OUTPUT);
+  set_mode(pi_, LEFT_MOTOR_FWD_PIN_, PI_OUTPUT);
+  set_mode(pi_, LEFT_MOTOR_REV_PIN_, PI_OUTPUT);
+  set_mode(pi_, RIGHT_PWM_PIN_, PI_OUTPUT);
+  set_mode(pi_, RIGHT_MOTOR_FWD_PIN_, PI_OUTPUT);
+  set_mode(pi_, RIGHT_MOTOR_REV_PIN_, PI_OUTPUT);
+
+  int setRightPwmFreq = set_PWM_frequency(pi_, RIGHT_PWM_PIN_, RIGHT_PWM_FREQ_);
+  int setLeftPwmFreq = set_PWM_frequency(pi_, LEFT_PWM_PIN_, LEFT_PWM_FREQ_);
+
   if (setRightPwmFreq < 0) {
     ROS_ERROR_STREAM("Error setting PWM_R frequency: " << setRightPwmFreq);
   }
 
-  int setLeftPwmFreq = set_PWM_frequency(pi_, PWM_L_, LEFT_PWM_FREQ_);
   if (setLeftPwmFreq < 0) {
     ROS_ERROR_STREAM("Error setting PWM_L frequency: " << setLeftPwmFreq);
   }
 
   // initialize motors off
-  gpio_write(pi_, MOTOR_L_FWD_, 1);
-  gpio_write(pi_, MOTOR_L_REV_, 1);
-  gpio_write(pi_, MOTOR_R_FWD_, 1);
-  gpio_write(pi_, MOTOR_R_REV_, 1);
+  gpio_write(pi_, LEFT_MOTOR_FWD_PIN_, 1);
+  gpio_write(pi_, LEFT_MOTOR_REV_PIN_, 1);
+  gpio_write(pi_, RIGHT_MOTOR_FWD_PIN_, 1);
+  gpio_write(pi_, RIGHT_MOTOR_REV_PIN_, 1);
 
   if (pi_ >= 0) {
     ROS_INFO_STREAM("Daemon interface started ok, pi: " << pi_);
@@ -82,11 +85,11 @@ int DifferentialDriveRobot::pigpioSetup() {
 }
 
 void DifferentialDriveRobot::createSubscribers() {
-  subForRightCounts_ =
+  subForRightWheelTicks_ =
       nh_.subscribe("rightWheel", 1000,
                     &DifferentialDriveRobot::calculateRightVelocity, this);
 
-  subForLeftCounts_ = nh_.subscribe(
+  subForLeftWheelTicks_ = nh_.subscribe(
       "leftWheel", 1000, &DifferentialDriveRobot::calculateLeftVelocity, this);
 
   subForVelocity_ =
@@ -134,10 +137,10 @@ void DifferentialDriveRobot::setSpeeds(const geometry_msgs::Twist& cmdVel) {
   if (abs(cmdVel.angular.z) > 0.01) {
     if (cmdVel.angular.z >= .01) {
       leftPwmReq_ = -TURN_PWM_;
-      rightPwmReq_ = (1.0 / L_MOTOR_COMP_) * TURN_PWM_;
+      rightPwmReq_ = (1.0 / LEFT_MOTOR_COMPENSATION_) * TURN_PWM_;
     } else if (cmdVel.angular.z < -.01) {
       leftPwmReq_ = TURN_PWM_;
-      rightPwmReq_ = -(1.0 / L_MOTOR_COMP_) * TURN_PWM_;
+      rightPwmReq_ = -(1.0 / LEFT_MOTOR_COMPENSATION_) * TURN_PWM_;
     }
 
     static double prevRotDiff = 0;
@@ -167,8 +170,8 @@ void DifferentialDriveRobot::setSpeeds(const geometry_msgs::Twist& cmdVel) {
     rightPwmReq_ = 0;
   } else if (abs(cmdVel.linear.x) > LINEAR_VELOCITY_MIN_) {
     if (cmdVel.linear.x > 0) {
-      leftPwmReq_ = KP_ * L_MOTOR_COMP_ * cmdVel.linear.x + b;
-      rightPwmReq_ = KP_ * (1.0 / L_MOTOR_COMP_) * cmdVel.linear.x + b;
+      leftPwmReq_ = KP_ * LEFT_MOTOR_COMPENSATION_ * cmdVel.linear.x + b;
+      rightPwmReq_ = KP_ * (1.0 / LEFT_MOTOR_COMPENSATION_) * cmdVel.linear.x + b;
     } else if (cmdVel.linear.x < 0) {
       leftPwmReq_ = KP_ * cmdVel.linear.x - b;
       rightPwmReq_ = KP_ * cmdVel.linear.x - b;
@@ -239,25 +242,25 @@ void DifferentialDriveRobot::setPinValues() {
   if (leftPwmReq_ > 0) {  // left fwd
     ROS_DEBUG_STREAM("leftPwmReq : " << leftPwmReq_);
     ROS_DEBUG_STREAM("left forward");
-    gpio_write(pi_, MOTOR_L_REV_, 1);
-    gpio_write(pi_, MOTOR_L_FWD_, 0);
+    gpio_write(pi_, LEFT_MOTOR_REV_PIN_, 1);
+    gpio_write(pi_, LEFT_MOTOR_FWD_PIN_, 0);
   } else if (leftPwmReq_ < 0) {  // left rev
-    gpio_write(pi_, MOTOR_L_FWD_, 1);
-    gpio_write(pi_, MOTOR_L_REV_, 0);
+    gpio_write(pi_, LEFT_MOTOR_FWD_PIN_, 1);
+    gpio_write(pi_, LEFT_MOTOR_REV_PIN_, 0);
   } else if (leftPwmReq_ == 0 && leftPwmOut == 0) {  // left stop
-    gpio_write(pi_, MOTOR_L_FWD_, 1);
-    gpio_write(pi_, MOTOR_L_REV_, 1);
+    gpio_write(pi_, LEFT_MOTOR_FWD_PIN_, 1);
+    gpio_write(pi_, LEFT_MOTOR_REV_PIN_, 1);
   }
 
   if (rightPwmReq_ > 0) {  // right fwd
-    gpio_write(pi_, MOTOR_R_REV_, 1);
-    gpio_write(pi_, MOTOR_R_FWD_, 0);
+    gpio_write(pi_, RIGHT_MOTOR_REV_PIN_, 1);
+    gpio_write(pi_, RIGHT_MOTOR_FWD_PIN_, 0);
   } else if (rightPwmReq_ < 0) {  // right rev
-    gpio_write(pi_, MOTOR_R_FWD_, 1);
-    gpio_write(pi_, MOTOR_R_REV_, 0);
+    gpio_write(pi_, RIGHT_MOTOR_FWD_PIN_, 1);
+    gpio_write(pi_, RIGHT_MOTOR_REV_PIN_, 0);
   } else if (rightPwmReq_ == 0 && rightPwmOut == 0) {
-    gpio_write(pi_, MOTOR_R_FWD_, 1);
-    gpio_write(pi_, MOTOR_R_REV_, 1);
+    gpio_write(pi_, RIGHT_MOTOR_FWD_PIN_, 1);
+    gpio_write(pi_, RIGHT_MOTOR_REV_PIN_, 1);
   }
 
   const double vel_eps = 1e-6;
@@ -304,9 +307,9 @@ void DifferentialDriveRobot::setPinValues() {
   // limit output to a low of zero
   leftPwmOut = (leftPwmOut < 0) ? 0 : leftPwmOut;
   rightPwmOut = (rightPwmOut < 0) ? 0 : rightPwmOut;
-  // write the pwm values tot he pins
-  set_PWM_dutycycle(pi_, PWM_L_, leftPwmOut);
-  set_PWM_dutycycle(pi_, PWM_R_, rightPwmOut);
+  // write the pwm values to the pins
+  set_PWM_dutycycle(pi_, LEFT_PWM_PIN_, leftPwmOut);
+  set_PWM_dutycycle(pi_, RIGHT_PWM_PIN_, rightPwmOut);
 
   ROS_INFO_STREAM("PWM OUT LEFT AND RIGHT            "
                   << leftPwmOut << "           " << rightPwmOut << std::endl);
