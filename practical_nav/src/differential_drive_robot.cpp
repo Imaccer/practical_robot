@@ -61,6 +61,7 @@ int DifferentialDriveRobot::pigpioSetup() {
   set_mode(pi_, RIGHT_MOTOR_FWD_PIN_, PI_OUTPUT);
   set_mode(pi_, RIGHT_MOTOR_REV_PIN_, PI_OUTPUT);
 
+  // adjust pwm frequency to avoid noise 
   int setRightPwmFreq = set_PWM_frequency(pi_, RIGHT_PWM_PIN_, RIGHT_PWM_FREQ_);
   int setLeftPwmFreq = set_PWM_frequency(pi_, LEFT_PWM_PIN_, LEFT_PWM_FREQ_);
 
@@ -88,6 +89,9 @@ int DifferentialDriveRobot::pigpioSetup() {
 }
 
 void DifferentialDriveRobot::createSubscribers() {
+  subForVelocity_ =
+      nh_.subscribe("cmd_vel", 1, &DifferentialDriveRobot::setSpeeds, this);
+
   subForRightWheelTicks_ =
       nh_.subscribe("rightWheel", 1000,
                     &DifferentialDriveRobot::calculateRightVelocity, this);
@@ -95,9 +99,20 @@ void DifferentialDriveRobot::createSubscribers() {
   subForLeftWheelTicks_ = nh_.subscribe(
       "leftWheel", 1000, &DifferentialDriveRobot::calculateLeftVelocity, this);
 
-  subForVelocity_ =
-      nh_.subscribe("cmd_vel", 1, &DifferentialDriveRobot::setSpeeds, this);
 }
+
+void DifferentialDriveRobot::setSpeeds(
+    const geometry_msgs::Twist& cmdVelocity) {
+  lastCmdMsgRcvd_ = ros::Time::now().toSec();
+    setInitialPwms(cmdVelocity);
+    straightDrivingCorrection();
+    
+  ROS_DEBUG_STREAM("CMD_VEL = " << cmdVelocity.linear.x);
+  ROS_DEBUG_STREAM("ANG_VEL = " << cmdVelocity.angular.z);
+
+
+    }
+
 
 void DifferentialDriveRobot::calculateLeftVelocity(
     const std_msgs::Int16& leftCount) {
@@ -130,16 +145,12 @@ void DifferentialDriveRobot::calculateRightVelocity(
   lastTime = ros::Time::now().toSec();
 }
 
-void DifferentialDriveRobot::setSpeeds(
-    const geometry_msgs::Twist& cmdVelocity) {
-  lastCmdMsgRcvd_ = ros::Time::now().toSec();
-  double lrVelocityCorrectionLimit = 0.01;
+void DifferentialDriveRobot::setInitialPwms(const geometry_msgs::Twist& cmdVelocity) {
   int controlB = (abs(cmdVelocity.linear.x) > LINEAR_VELOCITY_MIN_ &&
                   abs(cmdVelocity.linear.x) < .082)
                      ? 30
                      : 40;
 
-  // Set Pwm initial values depending on cmdVelocity components
   if (abs(cmdVelocity.angular.z) > ANGULAR_VELOCITY_MIN_) {
     if (cmdVelocity.angular.z >= ANGULAR_VELOCITY_MIN_) {
       leftPwmRequired_ = -TURN_PWM_;
@@ -164,6 +175,10 @@ void DifferentialDriveRobot::setSpeeds(
       rightPwmRequired_ = CONTROL_KP_ * cmdVelocity.linear.x - controlB;
     }
 
+} 
+}
+
+void DifferentialDriveRobot::straightDrivingCorrection() {
     // correct offset between left and right for straight-line driving
     static double lastLrVelocityDelta = 0;
     static double penultimateLrVelocityDelta = 0;
@@ -182,6 +197,8 @@ void DifferentialDriveRobot::setSpeeds(
 
     penultimateLrVelocityDelta = lastLrVelocityDelta;
     lastLrVelocityDelta = lrVelocityDelta;
+
+    double lrVelocityCorrectionLimit = 0.01;
 
     if (abs(avgLrVelocityDelta) > lrVelocityCorrectionLimit) {
       ROS_DEBUG_STREAM("Incrementing for straight-line driving... ");
@@ -208,7 +225,7 @@ void DifferentialDriveRobot::setSpeeds(
       rightPwmRequired_ +=
           static_cast<int>(lastAvgLrVelocityDelta * DRIFT_MULTIPLIER_);
     }
-  }
+  
 
   if (abs(leftPwmRequired_) < MIN_PWM_) {
     leftPwmRequired_ = 0;
@@ -217,15 +234,13 @@ void DifferentialDriveRobot::setSpeeds(
   if (abs(rightPwmRequired_) < MIN_PWM_) {
     rightPwmRequired_ = 0;
   }
-  ROS_DEBUG_STREAM("CMD_VEL = " << cmdVelocity.linear.x);
-  ROS_DEBUG_STREAM("ANG_VEL = " << cmdVelocity.angular.z);
 }
 
 void DifferentialDriveRobot::setPinValues() {
   static int leftPwmOut = 0;
   static int rightPwmOut = 0;
 
-  // if PwmReq*PwmOut is negative, that means the wheel is switching
+  // if PwmReq*velocity is negative, that means the wheel is switching
   // directions and we should bring to a stop before switching directions
   static bool stopped = false;
   if ((leftPwmRequired_ * leftVelocity_ < 0 && leftPwmOut != 0) ||
@@ -265,19 +280,19 @@ void DifferentialDriveRobot::setPinValues() {
   if (leftPwmRequired_ != 0 && (abs(leftVelocity_) < velocityTol)) {
     if (abs(leftPwmRequired_) < MAX_PWM_ && leftPwmOut >= MIN_PWM_) {
       leftPwmRequired_ *= 1.4;
-      ROS_DEBUG_STREAM("After bump leftpwmreq: " << leftPwmRequired_);
-      ROS_DEBUG_STREAM("After bump leftpwmout: " << leftPwmOut);
+      ROS_DEBUG_STREAM("After bump leftPwmRequired_: " << leftPwmRequired_);
+      ROS_DEBUG_STREAM("After bump leftPwmOut: " << leftPwmOut);
     }
   }
   if (rightPwmRequired_ != 0 && (abs(rightVelocity_) < velocityTol)) {
     if (abs(rightPwmRequired_) < MAX_PWM_ && leftPwmOut >= MIN_PWM_) {
       rightPwmRequired_ *= 1.4;
-      ROS_DEBUG_STREAM("After bump rightpwmreq: " << rightPwmRequired_);
-      ROS_DEBUG_STREAM("After bump rightpwmout: " << rightPwmOut);
+      ROS_DEBUG_STREAM("After bump rightPwmRequired_: " << rightPwmRequired_);
+      ROS_DEBUG_STREAM("After bump rightPwmOut: " << rightPwmOut);
     }
   }
 
-  // this section increments PWM changes instead of jarring/dangeroud sudden big
+  // this section increments PWM changes instead of jarring/dangerous sudden big
   // changes
   if (abs(leftPwmRequired_) > leftPwmOut) {
     leftPwmOut += PWM_INCREMENT_;
@@ -289,6 +304,7 @@ void DifferentialDriveRobot::setPinValues() {
   } else if (abs(rightPwmRequired_) < rightPwmOut) {
     rightPwmOut -= PWM_INCREMENT_;
   }
+
   // cap output at max defined in constants
   leftPwmOut = (leftPwmOut > MAX_PWM_) ? MAX_PWM_ : leftPwmOut;
   rightPwmOut = (rightPwmOut > MAX_PWM_) ? MAX_PWM_ : rightPwmOut;

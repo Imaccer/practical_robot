@@ -20,6 +20,8 @@ class DifferentialDriveRobot {
   void calculateLeftVelocity(const std_msgs::Int16& leftCount);
   void calculateRightVelocity(const std_msgs::Int16& rightCount);
   void setSpeeds(const geometry_msgs::Twist& cmdVelocity);
+  void setInitialPwms(const geometry_msgs::Twist& cmdVelocity);
+  void straightDrivingCorrection();
   void setPinValues();
 
   ros::NodeHandle nh_;
