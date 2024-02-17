@@ -23,6 +23,10 @@ class DifferentialDriveRobot {
   void setInitialPwms(const geometry_msgs::Twist& cmdVelocity);
   void straightDrivingCorrection();
   void setPinValues();
+  void setMotorsDirection(int leftPwmOut, int rightPwmOut);
+  void bumpStart(int leftPwmOut, int rightPwmOut);
+  void incrementPwm(int& leftPwmOut,int& rightPwmOut);
+  void capPwmOutputs(int& leftPwmOut, int& rightPwmOut);
 
   ros::NodeHandle nh_;
   ros::Rate loopRate_;
