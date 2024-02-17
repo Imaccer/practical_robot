@@ -1,3 +1,4 @@
+//  Copyright 2024 <Ian McNally>
 
 #ifndef PRACTICAL_NAV_INCLUDE_PRACTICAL_NAV_DIFFERENTIAL_DRIVE_ROBOT_H_
 #define PRACTICAL_NAV_INCLUDE_PRACTICAL_NAV_DIFFERENTIAL_DRIVE_ROBOT_H_
@@ -25,7 +26,7 @@ class DifferentialDriveRobot {
   void setPinValues();
   void setMotorsDirection(int leftPwmOut, int rightPwmOut);
   void bumpStart(int leftPwmOut, int rightPwmOut);
-  void incrementPwm(int& leftPwmOut,int& rightPwmOut);
+  void incrementPwm(int& leftPwmOut, int& rightPwmOut);
   void capPwmOutputs(int& leftPwmOut, int& rightPwmOut);
 
   ros::NodeHandle nh_;
@@ -39,18 +40,18 @@ class DifferentialDriveRobot {
   const double WHEEL_RADIUS_;
   const double WHEELBASE_;
   const double TICKS_PER_M_;
-  const int CONTROL_KP_;              
+  const int CONTROL_KP_;
   const int DRIFT_MULTIPLIER_;
   const int TURN_PWM_;
   const int MAX_TURN_PWM_;
   const int MIN_PWM_;
-  const int MAX_PWM_;        
+  const int MAX_PWM_;
   const double ANGULAR_VELOCITY_MIN_;
-  const double LINEAR_VELOCITY_MIN_; 
-  const double LEFT_MOTOR_COMPENSATION_;  
+  const double LINEAR_VELOCITY_MIN_;
+  const double LEFT_MOTOR_COMPENSATION_;
   const int LEFT_PWM_PIN_;
   const int LEFT_MOTOR_FWD_PIN_;
-  const int LEFT_MOTOR_REV_PIN_; 
+  const int LEFT_MOTOR_REV_PIN_;
   const int RIGHT_PWM_PIN_;
   const int RIGHT_MOTOR_FWD_PIN_;
   const int RIGHT_MOTOR_REV_PIN_;
