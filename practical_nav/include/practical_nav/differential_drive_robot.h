@@ -7,6 +7,7 @@
 #include "geometry_msgs/Twist.h"
 #include "ros/ros.h"
 #include "std_msgs/Int16.h"
+#include "practical_nav/encoder_reader.h"
 
 class DifferentialDriveRobot {
  public:
@@ -18,8 +19,6 @@ class DifferentialDriveRobot {
  private:
   int pigpioSetup();
   void createSubscribers();
-  void calculateLeftVelocity(const std_msgs::Int16& leftCount);
-  void calculateRightVelocity(const std_msgs::Int16& rightCount);
   void setSpeeds(const geometry_msgs::Twist& cmdVelocity);
   void setInitialPwms(const geometry_msgs::Twist& cmdVelocity);
   void straightDrivingCorrection();
@@ -28,6 +27,8 @@ class DifferentialDriveRobot {
   void bumpStart(int leftPwmOut, int rightPwmOut);
   void incrementPwm(int& leftPwmOut, int& rightPwmOut);
   void capPwmOutputs(int& leftPwmOut, int& rightPwmOut);
+  double getLeftVelocity();
+  double getRightVelocity();
 
   ros::NodeHandle nh_;
   ros::Rate loopRate_;
@@ -35,11 +36,7 @@ class DifferentialDriveRobot {
   ros::Subscriber subForLeftWheelTicks_;
   ros::Subscriber subForVelocity_;
 
-  const int ENCODER_RANGE_;
   const int PWM_INCREMENT_;
-  const double WHEEL_RADIUS_;
-  const double WHEELBASE_;
-  const double TICKS_PER_M_;
   const int CONTROL_KP_;
   const int DRIFT_MULTIPLIER_;
   const int TURN_PWM_;
@@ -58,12 +55,12 @@ class DifferentialDriveRobot {
   const int LEFT_PWM_FREQ_;
   const int RIGHT_PWM_FREQ_;
 
-  double leftVelocity_;
-  double rightVelocity_;
   double leftPwmRequired_;
   double rightPwmRequired_;
   double lastCmdMsgRcvd_;
   int pi_;
+
+  EncoderReader encoderReader_;
 };
 
 #endif  // PRACTICAL_NAV_INCLUDE_PRACTICAL_NAV_DIFFERENTIAL_DRIVE_ROBOT_H_
