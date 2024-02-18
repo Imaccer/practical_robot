@@ -1,14 +1,14 @@
+// Copyright 2024 <Ian McNally>
+
 #include "practical_nav/encoder_reader.h"
 #include <ros/ros.h>
 #include <std_msgs/Int16.h>
 
-EncoderReader::EncoderReader() 
-  : ENCODER_RANGE_(65535),
-    TICKS_PER_M_(2270),
-    leftVelocity_(0),
-    rightVelocity_(0) {
-
-}
+EncoderReader::EncoderReader()
+    : ENCODER_RANGE_(65535),
+      TICKS_PER_M_(2270),
+      leftVelocity_(0),
+      rightVelocity_(0) {}
 
 void EncoderReader::calculateLeftVelocity(const std_msgs::Int16& leftCount) {
   static double lastTime = 0;
@@ -23,12 +23,9 @@ void EncoderReader::calculateLeftVelocity(const std_msgs::Int16& leftCount) {
       cycleDistance / TICKS_PER_M_ / (ros::Time::now().toSec() - lastTime);
   lastCount = leftCount.data;
   lastTime = ros::Time::now().toSec();
-
 }
 
-
-void EncoderReader::calculateRightVelocity(
-    const std_msgs::Int16& rightCount) {
+void EncoderReader::calculateRightVelocity(const std_msgs::Int16& rightCount) {
   static double lastTime = 0;
   static int lastCount = 0;
   int cycleDistance =
@@ -42,11 +39,6 @@ void EncoderReader::calculateRightVelocity(
   lastTime = ros::Time::now().toSec();
 }
 
-double EncoderReader::getLeftVelocity() const {
-  return leftVelocity_;
-}
+double EncoderReader::getLeftVelocity() const { return leftVelocity_; }
 
-double EncoderReader::getRightVelocity() const {
-  return rightVelocity_;
-}
-
+double EncoderReader::getRightVelocity() const { return rightVelocity_; }

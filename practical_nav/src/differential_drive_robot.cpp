@@ -1,9 +1,9 @@
 //  Copyright 2024 <Ian McNally>
 
 #include "practical_nav/differential_drive_robot.h"
-#include "practical_nav/encoder_reader.h"
 #include <ros/ros.h>
 #include <iostream>
+#include "practical_nav/encoder_reader.h"
 
 DifferentialDriveRobot::DifferentialDriveRobot(ros::NodeHandle& nh)
 
@@ -46,11 +46,12 @@ DifferentialDriveRobot::~DifferentialDriveRobot() {
 
 void DifferentialDriveRobot::createSubscribers() {
   subForRightWheelTicks_ =
-      nh_.subscribe("rightWheel", 1000,
-                    &EncoderReader::calculateRightVelocity, &encoderReader_);
+      nh_.subscribe("rightWheel", 1000, &EncoderReader::calculateRightVelocity,
+                    &encoderReader_);
 
-  subForLeftWheelTicks_ = nh_.subscribe(
-      "leftWheel", 1000, &EncoderReader::calculateLeftVelocity, &encoderReader_);
+  subForLeftWheelTicks_ =
+      nh_.subscribe("leftWheel", 1000, &EncoderReader::calculateLeftVelocity,
+                    &encoderReader_);
 
   subForVelocity_ =
       nh_.subscribe("cmd_vel", 1, &DifferentialDriveRobot::setSpeeds, this);
@@ -178,9 +179,9 @@ void DifferentialDriveRobot::setInitialPwms(
 
 void DifferentialDriveRobot::straightDrivingCorrection() {
   // correct offset between left and right for straight-line driving
-  double leftVelocity =  getLeftVelocity();
-  double rightVelocity =  getRightVelocity();
- 
+  double leftVelocity = getLeftVelocity();
+  double rightVelocity = getRightVelocity();
+
   static double lastLrVelocityDelta = 0;
   static double penultimateLrVelocityDelta = 0;
   static double lastAvgLrVelocityDelta = 0;
@@ -278,7 +279,7 @@ void DifferentialDriveRobot::setMotorsDirection(int leftPwmOut,
 void DifferentialDriveRobot::bumpStart(int leftPwmOut, int rightPwmOut) {
   //  give robot extra bump to get moving if needed
   double leftVelocity = getLeftVelocity();
-  double rightVelocity =  getRightVelocity();
+  double rightVelocity = getRightVelocity();
 
   const double velocityTol = 1e-6;
   if (leftPwmRequired_ != 0 && (abs(leftVelocity) < velocityTol)) {
@@ -332,9 +333,9 @@ void DifferentialDriveRobot::capPwmOutputs(int& leftPwmOut, int& rightPwmOut) {
 }
 
 double DifferentialDriveRobot::getLeftVelocity() {
-   return encoderReader_.getLeftVelocity();
+  return encoderReader_.getLeftVelocity();
 }
 
 double DifferentialDriveRobot::getRightVelocity() {
-   return encoderReader_.getRightVelocity();
+  return encoderReader_.getRightVelocity();
 }
