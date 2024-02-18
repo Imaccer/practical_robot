@@ -56,9 +56,13 @@ add_library(encoder_reader src/encoder_reader.cpp)
 add_dependencies(encoder_reader ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}) 
 target_link_libraries(encoder_reader ${catkin_LIBRARIES}) 
 
+add_library(motor_controller src/motor_controller.cpp) 
+add_dependencies(motor_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}) 
+target_link_libraries(motor_controller libpigpiod_if2.so ${catkin_LIBRARIES} encoder_reader) 
+
 add_library(differential_drive_robot src/differential_drive_robot.cpp) 
 add_dependencies(differential_drive_robot ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}) 
-target_link_libraries(differential_drive_robot encoder_reader libpigpiod_if2.so ${catkin_LIBRARIES}) 
+target_link_libraries(differential_drive_robot encoder_reader motor_controller ${catkin_LIBRARIES}) 
 
 add_executable(differential_drive_node nodes/differential_drive_node.cpp) 
 add_dependencies(differential_drive_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}) 
