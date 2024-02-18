@@ -20,7 +20,7 @@ class DifferentialDriveRobot {
   int pigpioSetup();
   void createSubscribers();
   void setSpeeds(const geometry_msgs::Twist& cmdVelocity);
-  void setInitialPwms(const geometry_msgs::Twist& cmdVelocity);
+  void calculatePwmRequired(const geometry_msgs::Twist& cmdVelocity);
   void straightDrivingCorrection();
   void setPinValues();
   void setMotorsDirection(int leftPwmOut, int rightPwmOut);

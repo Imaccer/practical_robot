@@ -60,7 +60,7 @@ void DifferentialDriveRobot::createSubscribers() {
 void DifferentialDriveRobot::setSpeeds(
     const geometry_msgs::Twist& cmdVelocity) {
   lastCmdMsgRcvd_ = ros::Time::now().toSec();
-  setInitialPwms(cmdVelocity);
+  calculatePwmRequired(cmdVelocity);
   straightDrivingCorrection();
 
   ROS_DEBUG_STREAM("CMD_VEL = " << cmdVelocity.linear.x);
@@ -144,7 +144,7 @@ int DifferentialDriveRobot::pigpioSetup() {
   }
 }
 
-void DifferentialDriveRobot::setInitialPwms(
+void DifferentialDriveRobot::calculatePwmRequired(
     const geometry_msgs::Twist& cmdVelocity) {
   int controlB = (abs(cmdVelocity.linear.x) > LINEAR_VELOCITY_MIN_ &&
                   abs(cmdVelocity.linear.x) < .082)
