@@ -23,8 +23,7 @@ DifferentialDriveRobot::DifferentialDriveRobot(ros::NodeHandle& nh)
   createSubscribers();
 }
 
-DifferentialDriveRobot::~DifferentialDriveRobot() {
-}
+DifferentialDriveRobot::~DifferentialDriveRobot() {}
 
 void DifferentialDriveRobot::createSubscribers() {
   subForRightWheelTicks_ =
@@ -58,8 +57,7 @@ void DifferentialDriveRobot::interactMotorGPIOs() {
   motorController_.incrementPwm(leftPwmOut, rightPwmOut, *this);
   motorController_.capPwmOutputs(leftPwmOut, rightPwmOut, *this);
   motorController_.sendPwmSignals(leftPwmOut, rightPwmOut);
-  }
-
+}
 
 void DifferentialDriveRobot::run() {
   while (ros::ok()) {
@@ -162,7 +160,6 @@ void DifferentialDriveRobot::straightDrivingCorrection() {
     rightPwmRequired_ +=
         static_cast<int>(lastAvgLrVelocityDelta * DRIFT_MULTIPLIER_);
   }
-
 }
 
 double DifferentialDriveRobot::getLeftVelocity() {

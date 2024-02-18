@@ -1,29 +1,28 @@
 //  Copyright 2024 <Ian McNally>
 
-#include <pigpiod_if2.h>
 #include "practical_nav/motor_controller.h"
-#include "practical_nav/encoder_reader.h"
-#include "practical_nav/differential_drive_robot.h"
+#include <pigpiod_if2.h>
 #include <ros/ros.h>
+#include "practical_nav/differential_drive_robot.h"
+#include "practical_nav/encoder_reader.h"
 
 MotorController::MotorController(EncoderReader& encoderReader)
 
-  : encoderReader_(encoderReader),
-    PWM_INCREMENT_(1),
-    MIN_PWM_(25),
-    MAX_PWM_(90),
-    MAX_TURN_PWM_(55),
-    LEFT_PWM_PIN_(21),
-    LEFT_PWM_FREQ_(100),
-    RIGHT_PWM_PIN_(19),
-    RIGHT_PWM_FREQ_(100),
-    LEFT_MOTOR_FWD_PIN_(26),
-    LEFT_MOTOR_REV_PIN_(13),
-    RIGHT_MOTOR_FWD_PIN_(12),
-    RIGHT_MOTOR_REV_PIN_(20),
-    pi_(-1) {
- pi_ = pigpioSetup();
-
+    : encoderReader_(encoderReader),
+      PWM_INCREMENT_(1),
+      MIN_PWM_(25),
+      MAX_PWM_(90),
+      MAX_TURN_PWM_(55),
+      LEFT_PWM_PIN_(21),
+      LEFT_PWM_FREQ_(100),
+      RIGHT_PWM_PIN_(19),
+      RIGHT_PWM_FREQ_(100),
+      LEFT_MOTOR_FWD_PIN_(26),
+      LEFT_MOTOR_REV_PIN_(13),
+      RIGHT_MOTOR_FWD_PIN_(12),
+      RIGHT_MOTOR_REV_PIN_(20),
+      pi_(-1) {
+  pi_ = pigpioSetup();
 }
 
 MotorController::~MotorController() {
@@ -74,8 +73,8 @@ int MotorController::pigpioSetup() {
   }
 }
 
-void MotorController::setMotorsDirection(int leftPwmOut,
-                                                int rightPwmOut, DifferentialDriveRobot& robot) {
+void MotorController::setMotorsDirection(int leftPwmOut, int rightPwmOut,
+                                         DifferentialDriveRobot& robot) {
   // if PwmReq*velocity is negative, means wheel switching
   // directions and should be stopped first
   double leftVelocity = getLeftVelocity();
@@ -97,7 +96,7 @@ void MotorController::setMotorsDirection(int leftPwmOut,
     leftPwmRequired = 0;
     rightPwmRequired = 0;
   }
- 
+
   //  update pwm required values in robot object
   robot.setLeftPwmRequired(leftPwmRequired);
   robot.setRightPwmRequired(rightPwmRequired);
@@ -128,7 +127,8 @@ void MotorController::setMotorsDirection(int leftPwmOut,
   }
 }
 
-void MotorController::bumpStart(int leftPwmOut, int rightPwmOut, DifferentialDriveRobot& robot) {
+void MotorController::bumpStart(int leftPwmOut, int rightPwmOut,
+                                DifferentialDriveRobot& robot) {
   //  give robot extra bump to get moving if needed
   double leftVelocity = getLeftVelocity();
   double rightVelocity = getRightVelocity();
@@ -154,7 +154,8 @@ void MotorController::bumpStart(int leftPwmOut, int rightPwmOut, DifferentialDri
   robot.setRightPwmRequired(rightPwmRequired);
 }
 
-void MotorController::incrementPwm(int& leftPwmOut, int& rightPwmOut, DifferentialDriveRobot& robot) {
+void MotorController::incrementPwm(int& leftPwmOut, int& rightPwmOut,
+                                   DifferentialDriveRobot& robot) {
   // increments PWM changes instead of jarring/dangerous sudden big
   // changes
   double leftVelocity = getLeftVelocity();
@@ -174,11 +175,12 @@ void MotorController::incrementPwm(int& leftPwmOut, int& rightPwmOut, Differenti
   }
 }
 
-void MotorController::capPwmOutputs(int& leftPwmOut, int& rightPwmOut, DifferentialDriveRobot& robot) {
+void MotorController::capPwmOutputs(int& leftPwmOut, int& rightPwmOut,
+                                    DifferentialDriveRobot& robot) {
   // cap output at max defined in constants
   double leftPwmRequired = robot.getLeftPwmRequired();
   double rightPwmRequired = robot.getRightPwmRequired();
-  
+
   leftPwmOut = (leftPwmOut > MAX_PWM_) ? MAX_PWM_ : leftPwmOut;
   rightPwmOut = (rightPwmOut > MAX_PWM_) ? MAX_PWM_ : rightPwmOut;
 
@@ -196,16 +198,14 @@ void MotorController::capPwmOutputs(int& leftPwmOut, int& rightPwmOut, Different
 }
 
 void MotorController::sendPwmSignals(int leftPwmOut, int rightPwmOut) {
-// write the pwm values to the pins
+  // write the pwm values to the pins
   set_PWM_dutycycle(pi_, LEFT_PWM_PIN_, leftPwmOut);
   set_PWM_dutycycle(pi_, RIGHT_PWM_PIN_, rightPwmOut);
 
   ROS_INFO_STREAM("PWM OUT LEFT : " << leftPwmOut << std::endl
                                     << "PWM OUT RIGHT: " << rightPwmOut
                                     << std::endl);
-
 }
-
 
 double MotorController::getLeftVelocity() const {
   return encoderReader_.getLeftVelocity();
@@ -214,4 +214,3 @@ double MotorController::getLeftVelocity() const {
 double MotorController::getRightVelocity() const {
   return encoderReader_.getRightVelocity();
 }
-
