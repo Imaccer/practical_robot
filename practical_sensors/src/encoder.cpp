@@ -1,13 +1,15 @@
+//  Copyright 2024 <Ian McNally>
+
 #include "practical_sensors/encoder.h"
 #include <pigpiod_if2.h>
 #include <ros/ros.h>
 #include <std_msgs/Int16.h>
 #include <string>
 
-Encoder::Encoder(ros::NodeHandle& nh, int pii, unsigned int encoderPin,
+Encoder::Encoder(ros::NodeHandle& nh, int pi, unsigned int encoderPin,
                  unsigned int reversePin, const std::string& wheelName)
     : nh_(nh),
-      pi_(pii),
+      pi_(pi),
       encoderPin_(encoderPin),
       reversePin_(reversePin),
       wheelName_(wheelName) {
@@ -21,11 +23,13 @@ Encoder::Encoder(ros::NodeHandle& nh, int pii, unsigned int encoderPin,
 }
 
 Encoder::~Encoder() {
-  std::cout << "Cancelling callback: " << wheelName_ << std::endl;
+  ROS_INFO_STREAM("Cancelling callback: " << wheelName_ << std::endl);
   callback_cancel(callbackId_);
 }
 
-void Encoder::setPublisher(const ros::Publisher& publisher) {pub_ = publisher;};
+void Encoder::setPublisher(const ros::Publisher& publisher) {
+  pub_ = publisher;
+}
 
 void Encoder::setPigpiodIf2(MockPigpiodIf2* mockPigpiodIf2) {
   pigpiodIf2 = mockPigpiodIf2;
@@ -34,21 +38,17 @@ void Encoder::setPigpiodIf2(MockPigpiodIf2* mockPigpiodIf2) {
 bool Encoder::isInitialized() const { return (this != nullptr); }
 
 void Encoder::setupCallback() {
-  // callbackId_ = callback(pi_, encoderPin_, EITHER_EDGE,
-  // reinterpret_cast<CBFunc_t>(&Encoder::eventCallback));
   callbackId_ =
       callback_ex(pi_, encoderPin_, EITHER_EDGE, &Encoder::eventCallbackWrapper,
                   static_cast<void*>(this));
 
   if (callbackId_ >= 0) {
-    std::cout << "Callback set up successfully for " << wheelName_ << std::endl;
-    std::cout << "callbackId_ : " << callbackId_ << std::endl;
+    ROS_INFO_STREAM("Callback set up successfully for " << wheelName_ << std::endl);
+    ROS_INFO_STREAM( "callbackId_ : " << callbackId_ << std::endl);
   } else {
-    std::cerr << "Failed to set up callback for " << wheelName_ << std::endl;
+    ROS_ERROR_STREAM("Failed to set up callback for " << wheelName_ << std::endl);
   }
 
-  // Print the 'this' pointer
-  std::cout << "Inside setupCallback. 'this' pointer: " << this << std::endl;
 }
 
 void Encoder::eventCallbackWrapper(int pi, unsigned int gpio, unsigned int edge,
@@ -62,8 +62,6 @@ void Encoder::eventCallbackWrapper(int pi, unsigned int gpio, unsigned int edge,
 
 void Encoder::eventCallback(int pi, unsigned int gpio, unsigned int edge,
                             unsigned int tick, void* userdata) {
-  std::cout << "Inside setupCallback. 'this' pointer: " << this << std::endl;
-  std::cout << "gpio_read output: " << this->reversePin_ << std::endl;
   bool reverse = (gpio_read(pi, reversePin_) == 0);
 
   if (reverse) {

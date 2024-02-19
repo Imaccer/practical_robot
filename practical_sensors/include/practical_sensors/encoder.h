@@ -1,3 +1,5 @@
+//  Copyright 2024 <Ian McNally>
+
 #ifndef PRACTICAL_SENSORS_INCLUDE_PRACTICAL_SENSORS_ENCODER_H_
 #define PRACTICAL_SENSORS_INCLUDE_PRACTICAL_SENSORS_ENCODER_H_
 
@@ -20,7 +22,7 @@ class Encoder {
                      unsigned int tick, void* userdata);
   static void eventCallbackWrapper(int pi, unsigned int gpio, unsigned int edge,
                                    unsigned int tick, void* userdata);
- 
+
   void setPublisher(const ros::Publisher& publisher);
   void publishCount();
 
@@ -28,7 +30,7 @@ class Encoder {
 
  private:
   void updateCount(bool reverse);
-  
+
   ros::Publisher pub_;
   ros::NodeHandle nh_;
   std_msgs::Int16 count_;
@@ -42,6 +44,5 @@ class Encoder {
   int pi_;
   unsigned int encoderPin_;
   unsigned int reversePin_;
-  
 };
 #endif  // PRACTICAL_SENSORS_INCLUDE_PRACTICAL_SENSORS_ENCODER_H_
