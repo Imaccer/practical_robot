@@ -26,14 +26,15 @@ args="0.10 0 0 0 3.145 3.145 base_link laser_frame 10" />
 
 
 <!-- Comment out if another node provides odom to base_link transform -->
-<!--node pkg="practical_localization" type="tf_pub" name="tf_pub" /-->
+<node pkg="practical_localization" type="tf_pub" name="tf_pub" />
 
-<node pkg="practical_sensors" type="tick_publisher" name="tick_publisher"/>
+<node pkg="practical_sensors" type="encoder_node" name="encoder_node"/>
 
-<node pkg="practical_nav" type="simple_diff_drive" name="simple_diff_drive"/>
+<node pkg="practical_nav" type="differential_drive_node"
+name="differential_drive_node"/>
 
-<node pkg="practical_localization" type="encoder_odom_publisher"
-name="encoder_odom_publisher" >
+<node pkg="practical_localization" type="encoder_odom_publisher_node"
+name="encoder_odom_publisher_node" >
 </node>
 
 <node pkg="bn0055_fusion_imu" type="bn0055_accel_gyro_fusion_pub"

@@ -4,10 +4,10 @@
 
 <node pkg="practical_sensors" type="encoder_node" name="encoder_node"/>
 
-<!--
+
 <node pkg="practical_nav" type="differential_drive_node"
 name="differential_drive_node"/>
--->
+
 
 <!--node pkg="rplidar_ros" type="rplidarNode" name="rplidarNode" /-->
 
