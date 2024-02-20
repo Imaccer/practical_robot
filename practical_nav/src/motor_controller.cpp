@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 #include "practical_nav/differential_drive_robot.h"
 #include "practical_nav/encoder_reader.h"
+#include <cstdlib>
 
 MotorController::MotorController(EncoderReader& encoderReader)
 
@@ -21,6 +22,7 @@ MotorController::MotorController(EncoderReader& encoderReader)
       LEFT_MOTOR_REV_PIN_(13),
       RIGHT_MOTOR_FWD_PIN_(12),
       RIGHT_MOTOR_REV_PIN_(20),
+      BUMP_FACTOR_(1.1),
       pi_(-1) {
   pi_ = pigpioSetup();
 }
@@ -82,11 +84,11 @@ void MotorController::setMotorsDirection(int leftPwmOut, int rightPwmOut,
   double leftPwmRequired = robot.getLeftPwmRequired();
   double rightPwmRequired = robot.getRightPwmRequired();
 
-  if (abs(leftPwmRequired) < MIN_PWM_) {
+  if (std::abs(leftPwmRequired) < MIN_PWM_) {
     leftPwmRequired = 0;
   }
 
-  if (abs(rightPwmRequired) < MIN_PWM_) {
+  if (std::abs(rightPwmRequired) < MIN_PWM_) {
     rightPwmRequired = 0;
   }
 
@@ -138,13 +140,13 @@ void MotorController::bumpStart(int leftPwmOut, int rightPwmOut,
   const double velocityTol = 1e-6;
   if (leftPwmRequired != 0 && (abs(leftVelocity) < velocityTol)) {
     if (abs(leftPwmRequired) < MAX_PWM_ && leftPwmOut >= MIN_PWM_) {
-      leftPwmRequired *= 1.4;
+      leftPwmRequired *= BUMP_FACTOR_;
       ROS_DEBUG_STREAM("After bump leftPwmRequired: " << leftPwmRequired);
     }
   }
   if (rightPwmRequired != 0 && (abs(rightVelocity) < velocityTol)) {
     if (abs(rightPwmRequired) < MAX_PWM_ && leftPwmOut >= MIN_PWM_) {
-      rightPwmRequired *= 1.4;
+      rightPwmRequired *= BUMP_FACTOR_;
       ROS_DEBUG_STREAM("After bump rightPwmRequired: " << rightPwmRequired);
     }
   }
@@ -163,14 +165,14 @@ void MotorController::incrementPwm(int& leftPwmOut, int& rightPwmOut,
   double leftPwmRequired = robot.getLeftPwmRequired();
   double rightPwmRequired = robot.getRightPwmRequired();
 
-  if (abs(leftPwmRequired) > leftPwmOut) {
+  if (std::abs(leftPwmRequired) > leftPwmOut) {
     leftPwmOut += PWM_INCREMENT_;
-  } else if (abs(leftPwmRequired) < leftPwmOut) {
+  } else if (std::abs(leftPwmRequired) < leftPwmOut) {
     leftPwmOut -= PWM_INCREMENT_;
   }
-  if (abs(rightPwmRequired) > rightPwmOut) {
+  if (std::abs(rightPwmRequired) > rightPwmOut) {
     rightPwmOut += PWM_INCREMENT_;
-  } else if (abs(rightPwmRequired) < rightPwmOut) {
+  } else if (std::abs(rightPwmRequired) < rightPwmOut) {
     rightPwmOut -= PWM_INCREMENT_;
   }
 }

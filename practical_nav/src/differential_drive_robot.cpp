@@ -54,7 +54,7 @@ void DifferentialDriveRobot::interactMotorGPIOs() {
   static int rightPwmOut = 0;
 
   motorController_.setMotorsDirection(leftPwmOut, rightPwmOut, *this);
-  motorController_.bumpStart(leftPwmOut, rightPwmOut, *this);
+  //  motorController_.bumpStart(leftPwmOut, rightPwmOut, *this);
   motorController_.incrementPwm(leftPwmOut, rightPwmOut, *this);
   motorController_.capPwmOutputs(leftPwmOut, rightPwmOut, *this);
   motorController_.sendPwmSignals(leftPwmOut, rightPwmOut);
@@ -97,11 +97,13 @@ void DifferentialDriveRobot::calculatePwmRequired(
     if (cmdVelocity.angular.z >= ANGULAR_VELOCITY_MIN_) {
       ROS_DEBUG("Turning left...");
       leftPwmRequired_ = -TURN_PWM_;
-      rightPwmRequired_ = (1.0 / LEFT_MOTOR_COMPENSATION_) * TURN_PWM_;
+      //  rightPwmRequired_ = (1.0 / LEFT_MOTOR_COMPENSATION_) * TURN_PWM_;
+      rightPwmRequired_ = TURN_PWM_;
     } else if (cmdVelocity.angular.z < -ANGULAR_VELOCITY_MIN_) {
       ROS_DEBUG("Turning right...");
       leftPwmRequired_ = TURN_PWM_;
-      rightPwmRequired_ = -(1.0 / LEFT_MOTOR_COMPENSATION_) * TURN_PWM_;
+      //  rightPwmRequired_ = -(1.0 / LEFT_MOTOR_COMPENSATION_) * TURN_PWM_;
+      rightPwmRequired_ = -TURN_PWM_;
     }
   } else if (std::abs(cmdVelocity.linear.x) <= LINEAR_VELOCITY_MIN_) {
     leftPwmRequired_ = 0;

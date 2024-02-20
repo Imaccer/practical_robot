@@ -43,6 +43,8 @@ class MotorController {
   const int RIGHT_MOTOR_FWD_PIN_;
   const int RIGHT_MOTOR_REV_PIN_;
 
+  const double BUMP_FACTOR_;
+
   int pi_;
 
   int pigpioSetup();
