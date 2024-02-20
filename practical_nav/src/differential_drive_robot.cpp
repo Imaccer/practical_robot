@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <iostream>
 #include "practical_nav/encoder_reader.h"
+#include <cstdlib>
 
 DifferentialDriveRobot::DifferentialDriveRobot(ros::NodeHandle& nh)
 
@@ -57,6 +58,12 @@ void DifferentialDriveRobot::interactMotorGPIOs() {
   motorController_.incrementPwm(leftPwmOut, rightPwmOut, *this);
   motorController_.capPwmOutputs(leftPwmOut, rightPwmOut, *this);
   motorController_.sendPwmSignals(leftPwmOut, rightPwmOut);
+
+  ROS_DEBUG_STREAM("leftPwmOut = " << leftPwmOut << std::endl;);
+  ROS_DEBUG_STREAM("rightPwmOut = " << rightPwmOut << std::endl;);
+  ROS_DEBUG_STREAM("leftPwmRequired_ = " << leftPwmRequired_ << std::endl;);
+  ROS_DEBUG_STREAM("rightPwmRequired_ = " << rightPwmRequired_ << std::endl;);
+  
 }
 
 void DifferentialDriveRobot::run() {
@@ -80,23 +87,26 @@ void DifferentialDriveRobot::run() {
 
 void DifferentialDriveRobot::calculatePwmRequired(
     const geometry_msgs::Twist& cmdVelocity) {
+  ROS_DEBUG_STREAM("ANG_VEL= " << cmdVelocity.angular.z << std::endl;);
   int controlB = (abs(cmdVelocity.linear.x) > LINEAR_VELOCITY_MIN_ &&
                   abs(cmdVelocity.linear.x) < .082)
                      ? 30
                      : 40;
 
-  if (abs(cmdVelocity.angular.z) > ANGULAR_VELOCITY_MIN_) {
+  if (std::abs(cmdVelocity.angular.z) > ANGULAR_VELOCITY_MIN_) {
     if (cmdVelocity.angular.z >= ANGULAR_VELOCITY_MIN_) {
+      ROS_DEBUG("Turning left...");
       leftPwmRequired_ = -TURN_PWM_;
       rightPwmRequired_ = (1.0 / LEFT_MOTOR_COMPENSATION_) * TURN_PWM_;
     } else if (cmdVelocity.angular.z < -ANGULAR_VELOCITY_MIN_) {
+      ROS_DEBUG("Turning right...");
       leftPwmRequired_ = TURN_PWM_;
       rightPwmRequired_ = -(1.0 / LEFT_MOTOR_COMPENSATION_) * TURN_PWM_;
     }
-  } else if (abs(cmdVelocity.linear.x) <= LINEAR_VELOCITY_MIN_) {
+  } else if (std::abs(cmdVelocity.linear.x) <= LINEAR_VELOCITY_MIN_) {
     leftPwmRequired_ = 0;
     rightPwmRequired_ = 0;
-  } else if (abs(cmdVelocity.linear.x) > LINEAR_VELOCITY_MIN_) {
+  } else if (std::abs(cmdVelocity.linear.x) > LINEAR_VELOCITY_MIN_) {
     if (cmdVelocity.linear.x > 0) {
       leftPwmRequired_ =
           CONTROL_KP_ * LEFT_MOTOR_COMPENSATION_ * cmdVelocity.linear.x +
