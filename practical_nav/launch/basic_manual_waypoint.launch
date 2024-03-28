@@ -1,15 +1,53 @@
 <launch>
 
-<node pkg="practical_sensors" type="tick_publisher" name="tick_publisher"/>
+<node pkg="practical_sensors" type="encoder_node" name="encoder_node"/>
 
-<node pkg="practical_nav" type="simple_diff_drive" name="simple_diff_drive"/>
+<node pkg="tf" type="static_transform_publisher"
+name="tf_base_footprint_base_link"
+  args ="0 0 0.1 0 0 0 base_footprint base_link 50"/>
+
+<node pkg="tf" type="static_transform_publisher"
+name="tf_base_link_imu"
+  args ="-0.12 0.08 0 0 0 0 base_link imu 50"/>
+
+<node pkg="tf" type="static_transform_publisher" name="tf_base_link_laser"
+args="0.10 0 0 0 3.145 3.145 base_link laser_frame 10" />
+
+
+<node pkg="tf" type="static_transform_publisher" name="tf_map_odom" args="0 0 0 0 0 0 map odom 50" />
+
+
+<node pkg="tf" type="static_transform_publisher" name="tf_odom_base_footprint"
+args="0 0 0 0 0 0 odom base_footprint 50" />
+
+<node pkg="practical_nav" type="differential_drive_node"
+name="differential_drive_node"/>
 
 <node pkg="practical_localization" type="encoder_odom_publisher"
 name="encoder_odom_publisher"/>
 
-<node pkg="practical_nav" type="simple_drive_controller"
-name="simple_drive_controller">
-  <remap from="waypoint_2d" to="goal_2d" />
+<node pkg="bn0055_fusion_imu" type="bn0055_accel_gyro_fusion_pub"
+name="bn0055_accel_gyro_fusion_pub">
+</node>
+
+<node pkg="practical_nav" type="ekf_drive_controller"
+name="ekf_drive_controller" >
+<remap from="waypoint_2d" to="goal_2d" />
+</node>
+
+<node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf"
+output="screen">
+  <param name="output_frame" value="odom"/>
+  <param name="freq" value="30.0"/>
+  <param name="sensor_timeout" value="1.0"/>
+  <param name="odom_used" value="true"/>
+  <param name="imu_used" value="true"/>
+  <param name="vo_used" value="false"/>
+  <param name="debug" value="true" />
+  <param name="self_diagnose" value="true" />
+  <remap from="imu_data" to="imu" />
+  <remap from="odom" to="encoder/odom_quat" />
+  <remap from="tf_static" to="tf" />
 </node>
 
 <node pkg="practical_localization" type="manual_pose_and_goal_pub"
