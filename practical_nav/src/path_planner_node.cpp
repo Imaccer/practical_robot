@@ -65,11 +65,13 @@ bool goalActive = false;
 //copy the supplied costmap to a new _map we can access freely
 void map_handler(const nav_msgs::OccupancyGridPtr &costmap)
 {
+    cout << "map resolution with get function: " << map_resolution(costmap) << endl;
     static bool init_complete = false;
     //only do this stuff the first time a map is recieved.
     if (init_complete == false)
     {
         _map->header.frame_id = costmap->header.frame_id;
+        //_map->info.resolution = map_resolution(costmap);
         _map->info.resolution = costmap->info.resolution;
         _map->info.width = costmap->info.width;
         _map->info.height = costmap->info.height;
@@ -141,6 +143,13 @@ bool update_start_cell()
 //set the goal recieved and set goalActive = true to start pathfinding
 void set_goal(const geometry_msgs::PoseStamped &desiredPose)
 {
+
+// Print out map resolution for debugging
+cout << "Map Resolution: " << map_resolution(_map) << endl;
+
+// Print out the original values before conversion
+    cout << "Original Pose Values:" << endl;
+    cout << "Desired X: " << desiredPose.pose.position.x << ", Desired Y: " << desiredPose.pose.position.y << endl;
     //dont forget that grid cell is pose in meters / map resolution
     goal.x = (int)(desiredPose.pose.position.x / map_resolution(_map));
     goal.y = (int)(desiredPose.pose.position.y / map_resolution(_map));
@@ -521,22 +530,44 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "path_planner");
     ros::NodeHandle node;
 
-    //start tf::listener early so it has time to fill buffer
-    update_start_cell();
+    //update_start_cell();
+    try
+    {
+        //subscribe to _map and goal location
+        subMap = node.subscribe("costmap", 0, map_handler);
+        subGoal = node.subscribe("goal_2d", 0, set_goal);
 
-    //subscribe to _map and goal location
+        // Print out the subscribed topics
+        ROS_INFO("Subscribers initialized: %s, %s", subMap.getTopic().c_str(), subGoal.getTopic().c_str());
+    }
+    catch (const std::exception &e)
+    {
+        ROS_ERROR("Error initializing subscribers: %s", e.what());
+        return 1; // Exit with error code
+    }
+/*    //subscribe to _map and goal location
     subMap = node.subscribe("costmap", 0, map_handler);
     subGoal = node.subscribe("goal_2d", 0, set_goal);
+
+    // Print out the subscribed topics
+    ROS_INFO("Subscribers initialized: %s, %s", subMap.getTopic().c_str(), subGoal.getTopic().c_str());
+    // Print statement to check if the subscriber has been created
+    ROS_INFO("Subscribers initialized: costmap, goal_2d");
+*/
 
     //advertise publisher
     pub = node.advertise<geometry_msgs::PoseStamped>("waypoint_2d", 0);
     pathPub = node.advertise<nav_msgs::Path>("path", 0);
+
+    //start tf::listener early so it has time to fill buffer
+    update_start_cell();
 
     ros::Rate loop_rate(1);
     while (ros::ok())
     {
         if (goalActive == true)
         {
+//            update_start_cell();
             if(update_start_cell() == false)
             {
                 start.index = 0;

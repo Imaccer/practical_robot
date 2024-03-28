@@ -3,7 +3,7 @@
 <rosparam file="$(find practical_nav)/config/joystick.yaml"/>
 
 
-<arg name="map_file" default="$(find practical_nav)/maps/basementBoxMap.yaml"
+<arg name="map_file" default="$(find practical_nav)/maps/officeMap.yaml"
 />
 
 
@@ -24,14 +24,18 @@ args="0.10 0 0 0 3.145 3.145 base_link laser_frame 10" />
 
 <node pkg="tf" type="static_transform_publisher" name="tf_map_odom" args="0 0 0 0 0 0 map odom 50" />
 
+<node pkg="tf" type="static_transform_publisher" name="tf_odom_base_footprint"
+args="0 0 0 0 0 0 odom base_footprint 50" />
 
 <!-- Comment out if another node provides odom to base_link transform -->
 <node pkg="practical_localization" type="tf_pub" name="tf_pub" />
 
 <node pkg="practical_sensors" type="encoder_node" name="encoder_node"/>
 
+<!--
 <node pkg="practical_nav" type="differential_drive_node"
 name="differential_drive_node"/>
+-->
 
 <node pkg="practical_localization" type="encoder_odom_publisher_node"
 name="encoder_odom_publisher_node" >
@@ -62,9 +66,13 @@ output="screen">
   <remap from="odom" to="encoder/odom_quat" />
   <remap from="tf_static" to="tf" />
 </node>
-
+<!--
 <node pkg="practical_localization" type="manual_pose_and_goal_pub"
 name="manual_pose_and_goal_pub" output="screen"/>
+-->
+
+<node pkg="practical_localization" type="rviz_click_to_2d"
+name="rviz_click_to_2d" output="screen" />
 
 <!--
 <node pkg="joy" type="joy_node" name="joystick">
@@ -79,6 +87,7 @@ name="manual_pose_and_goal_pub" output="screen"/>
 ns="/costmap_2d/costmap" />
 <node pkg="costmap_2d" type="costmap_2d_node" name="costmap_2d" output="screen"
 />
+
 
 <node pkg="practical_nav" type="path_planner_node" name="path_planner_node"
 output="screen" >
