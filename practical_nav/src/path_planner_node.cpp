@@ -65,7 +65,8 @@ bool goalActive = false;
 //copy the supplied costmap to a new _map we can access freely
 void map_handler(const nav_msgs::OccupancyGridPtr &costmap)
 {
-    cout << "map resolution with get function: " << map_resolution(costmap) << endl;
+
+//  cout << "map resolution with get function: " << map_resolution(costmap) << endl;
     static bool init_complete = false;
     //only do this stuff the first time a map is recieved.
     if (init_complete == false)
