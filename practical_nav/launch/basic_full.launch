@@ -8,10 +8,13 @@
 <arg name="map_file" default="$(find practical_nav)/maps/officeMap.yaml"
 />
 -->
+<!--
 <arg name="map_file" default="$(find practical_nav)/maps/officeMap3.yaml"
 />
+-->
 
-
+<arg name="map_file" default="$(find practical_nav)/maps/mainFloorMap3.yaml"
+/>
 
 <node pkg="tf" type="static_transform_publisher"
 name="tf_base_footprint_base_link"
