@@ -36,6 +36,28 @@ void handle_goal(const geometry_msgs::PoseStamped &goal)
     rpyGoal.pose.orientation.w = 0;
     pub.publish(rpyGoal);
 }
+void handle_initial_pose(const geometry_msgs::PoseStamped &pose) {
+    geometry_msgs::PoseStamped rpyPose;
+    rpyPose.header.frame_id = "map";
+    rpyPose.header.stamp = pose.header.stamp;
+    rpyPose.pose.position.x = pose.pose.position.x;
+    rpyPose.pose.position.y = pose.pose.position.y;
+    rpyPose.pose.position.z = 0;
+
+    tf::Quaternion q;
+    tf::quaternionMsgToTF(pose.pose.orientation, q);
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+
+    rpyPose.pose.orientation.x = 0;
+    rpyPose.pose.orientation.y = 0;
+    rpyPose.pose.orientation.z = yaw;
+    rpyPose.pose.orientation.w = 0;
+
+    pub2.publish(rpyPose);
+}
+/*
 void handle_initial_pose(const geometry_msgs::PoseWithCovarianceStamped &pose)
 {
     geometry_msgs::PoseStamped rpyPose;
@@ -54,6 +76,8 @@ void handle_initial_pose(const geometry_msgs::PoseWithCovarianceStamped &pose)
     rpyPose.pose.orientation.w = 0;
     pub2.publish(rpyPose);
 }
+*/
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "rviz_click_to_2d");
