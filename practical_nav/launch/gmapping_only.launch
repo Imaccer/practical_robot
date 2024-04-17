@@ -54,8 +54,8 @@
 <!-- Initial map size  -->
     <param name="xmin" value="0"/>
     <param name="ymin" value="0"/>
-    <param name="xmax" value="10.0"/>
-    <param name="ymax" value="10.0"/>
+    <param name="xmax" value="30.0"/>
+    <param name="ymax" value="30.0"/>
 
     <!-- Processing parameters (resolution of the map)  -->
     <param name="delta" value="0.1"/>

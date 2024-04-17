@@ -1,0 +1,21 @@
+<launch>
+
+<rosparam file="$(find practical_nav)/config/joystick.yaml"/>
+
+<node pkg="practical_sensors" type="encoder_node" name="encoder_node"/>
+
+
+<node pkg="practical_nav" type="differential_drive_node"
+name="differential_drive_node"/>
+
+
+<!--node pkg="rplidar_ros" type="rplidarNode" name="rplidarNode" /-->
+
+<node pkg="joy" type="joy_node" name="joystick">
+  <param name="autorepeat_rate" value="20" />
+</node>
+
+<node pkg="joy_teleop" type="joy_teleop.py" name="joy_teleop">
+</node>
+
+</launch>
