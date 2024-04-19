@@ -14,8 +14,9 @@
 
 ## Introduction
 
-![Alt Text](images/RobotDemo-MadewithClipchamp-ezgif.com-video-to-gif-converter(1).gif)
+<!-- ![Alt Text](images/RobotDemo-MadewithClipchamp-ezgif.com-video-to-gif-converter(1).gif) -->
 
+<img src="images/RobotDemo-MadewithClipchamp-ezgif.com-video-to-gif-converter(1).gif" alt="Alt Text" width="600" height="400">
 
 
 Provide a detailed explanation of what your ROS project does, its purpose, and any relevant background information. Include the motivation behind the project and its intended audience.
@@ -50,7 +51,7 @@ https://abyz.me.uk/rpi/pigpio/download.html
 
 Once installed, the libpigpiod_if2.so file must be located appropriately, and referenced in the CMakeLists.txt file, and the pigpio daemon must be running:
 ```
-sudo pidpiod
+sudo pigpiod
 ```
 
 ### Catkin workspace
