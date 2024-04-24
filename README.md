@@ -2,6 +2,12 @@
 
 I built a differential drive robot to learn the fundamentals of robotics and to have a physical platform to implement robotics algorithms. I roughly followed a guide offered by the book "Practical Robotics in C++" by Lloyd Brombach, using the same hardware as he suggested and parts of the code at https://github.com/lbrombach/practical_robot.git. I chose to use older versions of ROS and Ubuntu that were used in Brombach's approach to avoid spending time resolving compatibility/dependency issues.
 
+<div style="text-align:center;">
+  <img src="images/robotOnly.gif" alt="Alt Text" width="400" height="400">
+</div>
+
+<br>
+
 Differences from the approach taken in the book include:
 - I used the ROS package robot-pose-ekf to estimate robot pose using both IMU and wheel odometry sensor data, while Brombach uses a simplified method of incorporating IMU data
 - I refactored most of the code in OOP style (work in progress) while Brombach's version avoids OOP
@@ -10,9 +16,9 @@ The final robot is capable of mapping its environment and intelligently navigati
 
 ## Robot Specifications
 
-<div style="display:flex;">
-  <img src="images/RobotDiagram.jpg" alt="Image 1" style="width:50%;">
-  <img src="images/RobotDiagram2.jpg" alt="Image 2" style="width:50%;">
+<div style="display:flex;justify-content:center;">
+  <img src="images/RobotDiagram.jpg" alt="Image 1" style="width:40%;">
+  <img src="images/RobotDiagram2.jpg" alt="Image 2" style="width:40%;">
 </div>
 
 <br>
@@ -161,9 +167,9 @@ Rviz is used to visualize the mapping process on the development machine. The de
 rviz rviz -d joy_mapping.rviz
 ```
 As the robot moves around, the map will be filled in:
-
+<div style="text-align:center;">
 <img src="images/LidarMapping.gif" alt="Alt Text" width="600" height="400">
-
+</div>
 <br>
 
  Once the entire area has been successfully mapped, the map can be saved as follows:
@@ -182,13 +188,13 @@ Also, check the file basic_full.launch for an example of how to load an existing
 
 ### Autonomous Drive Mode
 
-The final robot is able to intelligently navigate and costmap generated using its Lidar scanner and the gmapping package, using a path planning algorithm, and sensor data from wheel encoders and an IMU to accurately locate itself within the map.
+The final robot is able to intelligently navigate the costmap (generated using its Lidar scanner and the gmapping package) using a path planning algorithm. Sensor data from wheel encoders and an IMU is used to accurately locate itself within the map.
 
 For full operation of the robot, run the following commands:
 ```
 roslaunch practical_nav basic_full.launch
 ```
-For simplicity, locate the robot at the origin of your map (bottom left corner), initialize the pose to the starting position.
+For simplicity, locate the robot at the origin of your map (bottom left corner), initialize the pose to the starting position (following the prompts).
 
 In separate terminals, run each of the following commands:
 ```
@@ -196,11 +202,14 @@ rosrun rplidar_ros rplidarNode
 rosrun usb_cam usb_cam_node
 rosrun practical_localization rviz_click_to_2d
 ```
-The rviz_click_to_2d node allows the user to specify a target goal robot pose in the Rviz visualization with the 2d Nav Goal feature.
+The rviz_click_to_2d node allows the user to specify a target goal robot pose in the Rviz visualization with the 2d Nav Goal feature.  The A* path planning algorithm is then used to determine a series of waypoints to follow to reach the target.
 
 The basic_full.launch file runs all the other nodes required, loads the costmap generated for environment, and sets the static transforms for different reference frames of the robot components (e.g., the Lidar scanner and IMU).
 
-<img src="images/RobotDemo-MadewithClipchamp-ezgif.com-video-to-gif-converter(1).gif" alt="Alt Text" width="900" height="600">
+<div style="text-align:center;">
+<img src="images/BasicFullVideo1-ezgif.com-speed.gif" alt="Alt Text" width="900" height="600">
+</div>
+
 
 ## Troubleshooting / Debugging
 The following gives a list of troubleshooting techniques used:
@@ -208,11 +217,6 @@ The following gives a list of troubleshooting techniques used:
 - ```rosrun rqt_tf_tree rqt_tf_tree``` : this command is useful for viewing the connections between different reference frames, and to spot when there is a break in the tree
 -  ```rostopic echo topic_name```: check the output from a topic and which ROS nodes are publishing/subscribing to that topic
 - ```rostopic rqt_graph rqt_graph``` : view connectivity between publishers and subscribers to topics.
-- ```rosrun rviz rviz``` - real-time visualization of sensor data, tf-frames, robot's environment, the path calculated for autonomous mode etc.
+- ```rosrun rviz rviz``` : real-time visualization of sensor data, tf-frames, robot's environment, the path calculated for autonomous mode etc.
 - ```rosbag record -a``` : record and playback all ROS message traffic as if the robot was operating in real-time. Playback with ```rosbag play nameOfFile.bag```. Can also specify topics to record.
 - ```gdb ~/catkin_ws/devel/package_name/rosNode```: to troubleshoot a particular node you can run the binary in GDB 
-
-
-## License
-
-Specify the license under which your ROS project is distributed. Include any relevant copyright notices and license terms. If you're using third-party libraries or dependencies, make sure to mention their licenses as well.
